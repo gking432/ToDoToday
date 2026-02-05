@@ -21,6 +21,7 @@ export interface Task {
   priority: 'low' | 'medium' | 'high' | null
   scheduledSlots: ScheduledSlot[]
   createdAt: string // ISO datetime string
+  updatedAt?: string // ISO datetime string - for sync purposes
   order: number // user-controlled sort order
   subtasks?: Subtask[] // Optional array of subtasks/bullet points
   recurrence?: RecurrencePattern | null // Recurrence pattern for repeating tasks

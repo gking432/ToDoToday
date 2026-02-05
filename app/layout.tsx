@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Playfair_Display, DM_Sans } from 'next/font/google'
 import './globals.css'
 import { StoreProvider } from '@/hooks/useStore'
+import { AuthProvider } from '@/components/AuthProvider'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -31,7 +32,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
       <body className="font-sans antialiased">
-        <StoreProvider>{children}</StoreProvider>
+        <AuthProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </AuthProvider>
       </body>
     </html>
   )

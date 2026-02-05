@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { X, Calendar as CalendarIcon, Plus, List, Edit2, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { Task, Subtask } from '@/types'
 import { useStore } from '@/hooks/useStore'
-import { getDaysUntilDue, isOverdue, formatDate, wasCompletedToday, getTasksForDate, matchesRecurrence } from '@/lib/utils'
+import { getDaysUntilDue, isOverdue, formatDate, wasCompletedToday, getTasksForDate } from '@/lib/utils'
 import { format } from 'date-fns'
 import { CalendarPopup } from './CalendarPopup'
 
@@ -61,6 +61,7 @@ export function ToDoList() {
   })
   
   // For recurring tasks in the list, check completion status for today's instance
+  const { matchesRecurrence } = require('@/lib/utils')
   const todayTasksWithInstanceStatus = todayTasks.map(task => {
     if (task.recurrence && task.dueDate) {
       // Check if today matches the recurrence pattern
@@ -795,7 +796,7 @@ function TaskRow({
     }
     setEditingSubtasks([...existingSubtasks, blankSubtask])
     setEditingTaskId(task.id)
-    setShowActions(false) // Hide actions when editing starts
+    setShowActions(true) // Show calendar and delete buttons when editing starts
   }
 
   const handleSaveEdit = (e?: React.FocusEvent) => {
@@ -1118,64 +1119,58 @@ function TaskRow({
         )}
       </div>
 
-      {/* Action buttons on hover — Edit button always visible on hover, Calendar and X appear after edit is clicked */}
+      {/* Action buttons on hover — Edit button always visible on hover, Calendar and X appear when editing */}
       {hovered && !task.completed && !isEditing && (
         <div className="flex items-start gap-1 flex-shrink-0" style={{ paddingTop: '2px' }}>
           {/* Edit icon — always shown on hover */}
           <button
             onClick={(e) => {
               e.stopPropagation()
-              if (showActions) {
-                // If actions are already shown, clicking edit again starts editing
-                handleStartEdit()
-              } else {
-                // First click: show calendar and delete buttons
-                setShowActions(true)
-              }
+              // Immediately start editing and show calendar/delete buttons
+              handleStartEdit()
             }}
             className="p-1 rounded-md"
             style={{ color: '#5A7A5E', background: 'none', border: 'none', cursor: 'pointer' }}
             onMouseEnter={(e) => (e.currentTarget.style.color = '#006747')}
             onMouseLeave={(e) => (e.currentTarget.style.color = '#5A7A5E')}
-            title={showActions ? "Edit task" : "Show actions"}
+            title="Edit task"
           >
             <Edit2 size={13} strokeWidth={1.8} />
           </button>
+        </div>
+      )}
 
-          {/* Calendar and Delete buttons — only shown after edit is clicked */}
-          {showActions && (
-            <>
-              {/* Calendar icon for due date */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setPendingTaskId(task.id)
-                  setShowCalendar(true)
-                  setShowActions(false) // Hide actions when calendar opens
-                }}
-                className="p-1 rounded-md"
-                style={{ color: '#5A7A5E', background: 'none', border: 'none', cursor: 'pointer' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#006747')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#5A7A5E')}
-              >
-                <CalendarIcon size={13} strokeWidth={1.8} />
-              </button>
+      {/* Calendar and Delete buttons — shown when editing */}
+      {isEditing && !task.completed && (
+        <div className="flex items-start gap-1 flex-shrink-0" style={{ paddingTop: '2px' }}>
+          {/* Calendar icon for due date */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setPendingTaskId(task.id)
+              setShowCalendar(true)
+            }}
+            className="p-1 rounded-md"
+            style={{ color: '#5A7A5E', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#006747')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#5A7A5E')}
+          >
+            <CalendarIcon size={13} strokeWidth={1.8} />
+          </button>
 
-              {/* Trash icon to delete task */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowDeleteConfirm(true)
-                }}
-                className="p-1 rounded-md"
-                style={{ color: '#5A7A5E', background: 'none', border: 'none', cursor: 'pointer' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#F78FB3')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#5A7A5E')}
-              >
-                <Trash2 size={13} strokeWidth={1.8} />
-              </button>
-            </>
-          )}
+          {/* Trash icon to delete task */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowDeleteConfirm(true)
+            }}
+            className="p-1 rounded-md"
+            style={{ color: '#5A7A5E', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#F78FB3')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#5A7A5E')}
+          >
+            <Trash2 size={13} strokeWidth={1.8} />
+          </button>
         </div>
       )}
 
