@@ -170,6 +170,7 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
       startHour: 9,
       endHour: 10,
       location: '',
+      allDay: false,
     })
   }
 

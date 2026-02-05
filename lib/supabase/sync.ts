@@ -197,7 +197,7 @@ export async function deleteEventFromSupabase(userId: string, eventId: string): 
 export async function syncJournalToSupabase(userId: string, journal: Record<string, JournalEntry>): Promise<void> {
   const entries = Object.values(journal)
   const dbEntries = entries.map(entry => ({
-    ...appJournalToDb(entry),
+    ...appJournalToDb(entry, userId),
     user_id: userId,
   }))
   
@@ -225,7 +225,7 @@ export async function fetchJournalFromSupabase(userId: string): Promise<Record<s
 
 export async function upsertJournalEntryToSupabase(userId: string, entry: JournalEntry): Promise<void> {
   const dbEntry = {
-    ...appJournalToDb(entry),
+    ...appJournalToDb(entry, userId),
     user_id: userId,
     updated_at: new Date().toISOString(),
   }
