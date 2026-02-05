@@ -22,6 +22,9 @@ export function ToDoTodayApp() {
   const [timeHovered, setTimeHovered] = useState(false)
   const [showFullViewText, setShowFullViewText] = useState(false)
   const [middleColumnWidth, setMiddleColumnWidth] = useState<number>(0)
+  
+  // Determine base path for assets (GitHub Pages uses /ToDoToday)
+  const basePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/ToDoToday') ? '/ToDoToday' : ''
 
   // Calculate middle column width (space between ToDoList and MonthlyView)
   useEffect(() => {
@@ -394,7 +397,7 @@ export function ToDoTodayApp() {
 
           {/* Plant shadow SVG - full height, bottom right, part of background */}
           <img
-            src="/plantshadow.svg"
+            src={`${basePath}/plantshadow.svg`}
             alt=""
             style={{
               position: 'absolute',
