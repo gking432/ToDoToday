@@ -222,7 +222,6 @@ export function ProjectNotesView({ navigate, isExpanded = false, onExpand, onCol
                   outline: 'none',
                   minWidth: '120px',
                 }}
-                placeholder="Project name"
               />
             </div>
           ) : null}
