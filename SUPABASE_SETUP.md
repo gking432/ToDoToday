@@ -129,3 +129,53 @@ Your existing data is safe and will be preserved!
 - The app works offline and syncs when you're back online
 
 Enjoy your synced ToDoToday app! 🎉
+
+## GitHub Pages Deployment
+
+To deploy your app to GitHub Pages:
+
+### 1. Configure GitHub Secrets
+
+1. Go to your GitHub repository → **Settings** → **Secrets and variables** → **Actions**
+2. Click **New repository secret** and add:
+   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key
+
+### 2. Enable GitHub Pages
+
+1. Go to your GitHub repository → **Settings** → **Pages**
+2. Under **Source**, select **GitHub Actions**
+3. The workflow will automatically deploy when you push to the `main` branch
+
+### 3. Update Supabase Redirect URLs
+
+After deployment, update your Supabase redirect URLs:
+
+1. In Supabase dashboard → **Authentication** → **URL Configuration**
+2. Add to **Redirect URLs**:
+   - `https://YOUR_USERNAME.github.io/ToDoToday/auth/callback`
+   - Replace `YOUR_USERNAME` with your GitHub username
+
+3. Also update Google OAuth redirect URI in Google Cloud Console:
+   - The Supabase callback URL remains: `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`
+   - But make sure your app's redirect URL in the code points to the GitHub Pages URL
+
+### 4. Deploy
+
+1. Push your code to the `main` branch:
+   ```bash
+   git add .
+   git commit -m "Configure for GitHub Pages"
+   git push origin main
+   ```
+
+2. The GitHub Actions workflow will automatically:
+   - Build your Next.js app as a static site
+   - Deploy it to GitHub Pages
+   - Your site will be available at `https://YOUR_USERNAME.github.io/ToDoToday`
+
+### Notes
+
+- The app is configured to use `/ToDoToday` as the base path for GitHub Pages
+- If your repository has a different name, update `basePath` in `next.config.js`
+- The site will rebuild automatically on every push to `main`

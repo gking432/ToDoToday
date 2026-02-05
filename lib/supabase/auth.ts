@@ -4,12 +4,19 @@ import { supabase } from './client'
 import type { User } from '@supabase/supabase-js'
 
 export async function signInWithGoogle() {
+  const getRedirectUrl = () => {
+    if (typeof window === 'undefined') return undefined
+    
+    // Detect base path from current URL
+    const pathname = window.location.pathname
+    const basePath = pathname.startsWith('/ToDoToday') ? '/ToDoToday' : ''
+    return `${window.location.origin}${basePath}/auth/callback`
+  }
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: typeof window !== 'undefined' 
-        ? `${window.location.origin}/auth/callback`
-        : undefined
+      redirectTo: getRedirectUrl()
     }
   })
   
