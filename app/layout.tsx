@@ -16,11 +16,14 @@ const dmSans = DM_Sans({
   display: 'swap',
 })
 
+// Determine basePath for favicon (GitHub Pages uses /ToDoToday)
+const basePath = process.env.NODE_ENV === 'production' ? '/ToDoToday' : ''
+
 export const metadata: Metadata = {
   title: 'ToDoToday',
   description: 'A personal productivity app combining to-dos, calendar, and journal',
   icons: {
-    icon: '/favicon.svg',
+    icon: `${basePath}/favicon.svg`,
   },
 }
 
