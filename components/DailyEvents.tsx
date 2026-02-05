@@ -132,6 +132,7 @@ export function DailyEvents({ date }: DailyEventsProps) {
       startHour: 9,
       endHour: 10,
       location: '',
+      allDay: false,
     })
   }
 
