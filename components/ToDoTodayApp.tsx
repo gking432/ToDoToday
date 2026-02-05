@@ -303,6 +303,7 @@ export function ToDoTodayApp() {
                 fontSize: '12px',
                 color: '#FFFFFF',
                 animation: 'fadeIn 0.3s ease-in',
+                zIndex: 1,
               }}
             >
               <div
@@ -346,6 +347,8 @@ export function ToDoTodayApp() {
               gap: '6px',
               justifyContent: 'center',
               marginBottom: '8px',
+              position: 'relative',
+              zIndex: 1,
             }}
           >
             <span>{format(currentTime, 'h:mm')}</span>
@@ -368,6 +371,8 @@ export function ToDoTodayApp() {
               fontWeight: 500,
               color: '#FFFFFF',
               textAlign: 'center',
+              position: 'relative',
+              zIndex: 1,
             }}
           >
             {format(currentTime, 'EEEE')}
@@ -380,12 +385,14 @@ export function ToDoTodayApp() {
               color: '#E8EFE6',
               textAlign: 'center',
               marginTop: '8px',
+              position: 'relative',
+              zIndex: 1,
             }}
           >
             {format(currentTime, 'MMMM d, yyyy')}
           </div>
 
-          {/* Plant shadow SVG - full height, bottom right */}
+          {/* Plant shadow SVG - full height, bottom right, part of background */}
           <img
             src="/plantshadow.svg"
             alt=""
@@ -397,6 +404,8 @@ export function ToDoTodayApp() {
               width: 'auto',
               objectFit: 'contain',
               objectPosition: 'bottom right',
+              zIndex: 0,
+              pointerEvents: 'none',
             }}
           />
         </div>
