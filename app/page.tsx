@@ -5,7 +5,7 @@ import { LoginScreen } from '@/components/LoginScreen'
 import { useAuth } from '@/components/AuthProvider'
 
 export default function Home() {
-  const { user, loading } = useAuth()
+  const { user, loading, isGuest } = useAuth()
 
   if (loading) {
     return (
@@ -15,7 +15,7 @@ export default function Home() {
     )
   }
 
-  if (!user) {
+  if (!user && !isGuest) {
     return <LoginScreen />
   }
 

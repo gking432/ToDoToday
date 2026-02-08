@@ -7,8 +7,10 @@ import type { User } from '@supabase/supabase-js'
 interface AuthContextType {
   user: User | null
   loading: boolean
+  isGuest: boolean
   signIn: () => Promise<void>
   signOut: () => Promise<void>
+  continueAsGuest: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -16,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isGuest, setIsGuest] = useState(false)
 
   useEffect(() => {
     // Get initial session
@@ -42,6 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleSignOut = async () => {
     await signOut()
     setUser(null)
+    setIsGuest(false)
+  }
+
+  const handleContinueAsGuest = () => {
+    setIsGuest(true)
+    setUser(null)
+    setLoading(false)
   }
 
   return (
@@ -49,8 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
+        isGuest,
         signIn: handleSignIn,
         signOut: handleSignOut,
+        continueAsGuest: handleContinueAsGuest,
       }}
     >
       {children}

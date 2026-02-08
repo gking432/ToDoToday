@@ -3,7 +3,7 @@
 import { useAuth } from './AuthProvider'
 
 export function LoginScreen() {
-  const { signIn, loading } = useAuth()
+  const { signIn, loading, continueAsGuest } = useAuth()
 
   return (
     <div className="flex h-screen items-center justify-center bg-gradient-to-br from-green-50 to-green-100">
@@ -19,7 +19,7 @@ export function LoginScreen() {
           <button
             onClick={signIn}
             disabled={loading}
-            className="w-full rounded-lg bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-md ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            className="w-full rounded-lg bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-md ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mb-4"
           >
             {loading ? (
               <span>Loading...</span>
@@ -47,6 +47,26 @@ export function LoginScreen() {
               </>
             )}
           </button>
+
+          <div className="relative mb-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-2 text-gray-500">or</span>
+            </div>
+          </div>
+
+          <button
+            onClick={continueAsGuest}
+            className="w-full rounded-lg bg-[#006747] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#005238] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Continue as Guest
+          </button>
+          
+          <p className="mt-4 text-xs text-gray-500">
+            Guest mode: Your data is stored locally and won't sync across devices
+          </p>
         </div>
       </div>
     </div>
