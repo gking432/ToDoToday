@@ -14,7 +14,9 @@ interface DueItemsSummaryProps {
 export function DueItemsSummary({ date }: DueItemsSummaryProps) {
   const store = useStore()
   const dateStr = formatDate(date)
-  const isToday = formatDate(new Date()) === dateStr
+  const todayStr = formatDate(new Date())
+  const isToday = todayStr === dateStr
+  const isPast = dateStr < todayStr
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set())
 
   const toggleTaskExpansion = (taskId: string) => {
@@ -32,67 +34,72 @@ export function DueItemsSummary({ date }: DueItemsSummaryProps) {
   // Get all tasks for this date (including recurring)
   const tasksForDate = getTasksForDate(store.tasks, date)
   
-  // Separate overdue tasks - check original due dates, not instances
-  const overdueTasks = store.tasks.filter((task) => {
+  // Separate overdue tasks - only relevant for today (not past dates)
+  const overdueTasks = isPast ? [] : store.tasks.filter((task) => {
     if (!task.dueDate) return false
     if (task.completed) return false
     if (task.parentTaskId) return false // Skip instances
     return isOverdue(task.dueDate)
   })
 
-  // Due today - includes both completed and incomplete tasks, including recurring instances
+  // Due on this date - for past dates, show ALL tasks (time capsule); for today/future, exclude overdue
   const dueTasks = tasksForDate.filter((task) => {
-    // Only show tasks due on this specific date (not overdue)
     if (!task.dueDate) return false
+    // For past dates, show all tasks for that date (completed included)
+    if (isPast) return true
+    // For today/future, only show tasks that aren't overdue
     return !isOverdue(task.dueDate)
   })
 
   // Upcoming tasks - due in next 7 days (excluding today and overdue)
-  // Generate dates for next 7 days and check for recurring tasks
+  // Not relevant for past dates (time capsule mode)
   const upcomingTasks: Task[] = []
-  const today = new Date()
   
-  // Get the parent task IDs that are already in "Due Today" (for recurring tasks)
-  const dueTodayParentIds = new Set<string>()
-  dueTasks.forEach(task => {
-    // If it's a recurring instance, track the parent ID
-    if (task.parentTaskId) {
-      dueTodayParentIds.add(task.parentTaskId)
-    } else if (task.recurrence) {
-      // If it's the parent recurring task itself, track its ID
-      dueTodayParentIds.add(task.id)
+  if (!isPast) {
+    const today = new Date()
+    
+    // Get the parent task IDs that are already in "Due Today" (for recurring tasks)
+    const dueTodayParentIds = new Set<string>()
+    dueTasks.forEach(task => {
+      // If it's a recurring instance, track the parent ID
+      if (task.parentTaskId) {
+        dueTodayParentIds.add(task.parentTaskId)
+      } else if (task.recurrence) {
+        // If it's the parent recurring task itself, track its ID
+        dueTodayParentIds.add(task.id)
+      }
+    })
+    
+    for (let i = 1; i <= 7; i++) {
+      const futureDate = new Date(today)
+      futureDate.setDate(today.getDate() + i)
+      const tasksForFutureDate = getTasksForDate<Task>(store.tasks, futureDate)
+      for (const task of tasksForFutureDate) {
+        if (task.completed) continue
+        if (isOverdue(task.dueDate || '')) continue
+        
+        // Skip if this recurring task is already in "Due Today"
+        if (task.parentTaskId && dueTodayParentIds.has(task.parentTaskId)) {
+          continue
+        }
+        if (task.recurrence && !task.parentTaskId && dueTodayParentIds.has(task.id)) {
+          continue
+        }
+        
+        // Avoid duplicates by checking id and parentTaskId combination
+        const taskKey = `${task.id}-${task.parentTaskId || ''}`
+        if (!upcomingTasks.some(t => `${t.id}-${t.parentTaskId || ''}` === taskKey)) {
+          upcomingTasks.push(task)
+        }
+      }
     }
-  })
-  
-  for (let i = 1; i <= 7; i++) {
-    const futureDate = new Date(today)
-    futureDate.setDate(today.getDate() + i)
-    const tasksForFutureDate = getTasksForDate<Task>(store.tasks, futureDate)
-    for (const task of tasksForFutureDate) {
-      if (task.completed) continue
-      if (isOverdue(task.dueDate || '')) continue
-      
-      // Skip if this recurring task is already in "Due Today"
-      if (task.parentTaskId && dueTodayParentIds.has(task.parentTaskId)) {
-        continue // This recurring task already appears in Due Today, skip from Upcoming
-      }
-      if (task.recurrence && !task.parentTaskId && dueTodayParentIds.has(task.id)) {
-        continue // This recurring task (parent) already appears in Due Today, skip from Upcoming
-      }
-      
-      // Avoid duplicates by checking id and parentTaskId combination
-      const taskKey = `${task.id}-${task.parentTaskId || ''}`
-      if (!upcomingTasks.some(t => `${t.id}-${t.parentTaskId || ''}` === taskKey)) {
-        upcomingTasks.push(task)
-      }
-    }
+    
+    // Sort by due date - nearest dates first
+    upcomingTasks.sort((a, b) => {
+      if (!a.dueDate || !b.dueDate) return 0
+      return a.dueDate.localeCompare(b.dueDate)
+    })
   }
-  
-  // Sort by due date - nearest dates first
-  upcomingTasks.sort((a, b) => {
-    if (!a.dueDate || !b.dueDate) return 0
-    return a.dueDate.localeCompare(b.dueDate)
-  })
 
   // If nothing in any section, show blank
   if (overdueTasks.length === 0 && dueTasks.length === 0 && upcomingTasks.length === 0) {
@@ -258,8 +265,6 @@ export function DueItemsSummary({ date }: DueItemsSummaryProps) {
                         })()}
                         <div
                           onClick={() => {
-                            // For recurring tasks, use the instance date (task.dueDate is already set to the instance date)
-                            // For non-recurring tasks, instanceDate is undefined
                             const instanceDate = task.parentTaskId ? task.dueDate : (task.recurrence ? task.dueDate : undefined)
                             store.updateTask(task.parentTaskId || task.id, { completed: !task.completed }, instanceDate || undefined)
                           }}

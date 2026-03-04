@@ -380,7 +380,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return merged
   }
 
-  // Save tasks to localStorage and sync to Supabase
+  // Save tasks to localStorage (Supabase sync handled by individual operations)
   const saveTasks = useCallback((newTasks: Task[]) => {
     // Add updatedAt to all tasks
     const tasksWithTimestamp = newTasks.map(task => ({
@@ -393,50 +393,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(TASKS_KEY, JSON.stringify(tasksWithTimestamp))
     }
     
-    // Sync to Supabase in background (fire and forget)
-    if (user && !isSyncingRef.current) {
-      sync.syncTasksToSupabase(user.id, tasksWithTimestamp).catch(console.error)
-    }
-  }, [user])
+    return tasksWithTimestamp
+  }, [])
 
-  // Save journal to localStorage and sync to Supabase
+  // Save journal to localStorage (Supabase sync handled by individual operations)
   const saveJournal = useCallback((newJournal: Record<string, JournalEntry>) => {
     setJournal(newJournal)
     if (typeof window !== 'undefined') {
       localStorage.setItem(JOURNAL_KEY, JSON.stringify(newJournal))
     }
-    
-    // Sync to Supabase in background
-    if (user && !isSyncingRef.current) {
-      sync.syncJournalToSupabase(user.id, newJournal).catch(console.error)
-    }
-  }, [user])
+  }, [])
 
-  // Save events to localStorage and sync to Supabase
+  // Save events to localStorage (Supabase sync handled by individual operations)
   const saveEvents = useCallback((newEvents: Event[]) => {
     setEvents(newEvents)
     if (typeof window !== 'undefined') {
       localStorage.setItem(EVENTS_KEY, JSON.stringify(newEvents))
     }
-    
-    // Sync to Supabase in background
-    if (user && !isSyncingRef.current) {
-      sync.syncEventsToSupabase(user.id, newEvents).catch(console.error)
-    }
-  }, [user])
+  }, [])
 
-  // Save projects to localStorage and sync to Supabase
+  // Save projects to localStorage (Supabase sync handled by individual operations)
   const saveProjects = useCallback((newProjects: Project[]) => {
     setProjects(newProjects)
     if (typeof window !== 'undefined') {
       localStorage.setItem(PROJECTS_KEY, JSON.stringify(newProjects))
     }
-    
-    // Sync to Supabase in background
-    if (user && !isSyncingRef.current) {
-      sync.syncProjectsToSupabase(user.id, newProjects).catch(console.error)
-    }
-  }, [user])
+  }, [])
 
   // Task operations
   const addTask = useCallback((text: string, subtasks?: Subtask[], dueDate?: string, recurrence?: any): string => {
@@ -455,8 +437,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       parentTaskId: null,
     }
     saveTasks([...tasks, newTask])
+    
+    // Sync new task to Supabase
+    if (user && !isSyncingRef.current) {
+      sync.upsertTaskToSupabase(user.id, newTask).catch(console.error)
+    }
     return newTask.id
-  }, [tasks, saveTasks])
+  }, [tasks, saveTasks, user])
 
   const updateTask = useCallback((id: string, updates: Partial<Task>, instanceDate?: string) => {
     const updatedTasks = tasks.map(task => {
@@ -512,13 +499,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [tasks, saveTasks, user])
 
   const reorderTasks = useCallback((newOrder: Task[]) => {
-    const reordered = newOrder.map((task, index) => ({ ...task, order: index }))
+    const reordered = newOrder.map((task, index) => ({ ...task, order: index, updatedAt: new Date().toISOString() }))
     saveTasks(reordered)
-  }, [saveTasks])
+    
+    // Sync reordered tasks to Supabase individually
+    if (user && !isSyncingRef.current) {
+      Promise.all(
+        reordered.map(task => sync.upsertTaskToSupabase(user.id, task))
+      ).catch(console.error)
+    }
+  }, [saveTasks, user])
 
   const clearCompleted = useCallback(() => {
+    const completedIds = tasks.filter(task => task.completed).map(t => t.id)
     saveTasks(tasks.filter(task => !task.completed))
-  }, [tasks, saveTasks])
+    
+    // Delete completed tasks from Supabase
+    if (user && !isSyncingRef.current) {
+      Promise.all(
+        completedIds.map(id => sync.deleteTaskFromSupabase(user.id, id))
+      ).catch(console.error)
+    }
+  }, [tasks, saveTasks, user])
 
   // Journal operations
   const saveJournalEntry = useCallback((date: string, content: string) => {
@@ -558,8 +560,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString(),
     }
     saveProjects([...projects, newProject])
+    
+    // Sync new project to Supabase
+    if (user && !isSyncingRef.current) {
+      sync.upsertProjectToSupabase(user.id, newProject).catch(console.error)
+    }
     return newProject.id
-  }, [projects, saveProjects])
+  }, [projects, saveProjects, user])
 
   const updateProject = useCallback((id: string, updates: Partial<Project>) => {
     const updatedProjects = projects.map(project => {
@@ -602,7 +609,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return project
     })
     saveProjects(updatedProjects)
-  }, [projects, saveProjects])
+    
+    // Sync individual project update to Supabase
+    const updatedProject = updatedProjects.find(p => p.id === id)
+    if (user && updatedProject && !isSyncingRef.current) {
+      sync.upsertProjectToSupabase(user.id, updatedProject).catch(console.error)
+    }
+  }, [projects, saveProjects, user])
 
   const getProject = useCallback((id: string): Project | null => {
     return projects.find(project => project.id === id) || null
@@ -638,8 +651,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sourceTaskId,
     }
     saveEvents([...events, newEvent])
+    
+    // Sync new event to Supabase
+    if (user && !isSyncingRef.current) {
+      sync.upsertEventToSupabase(user.id, newEvent).catch(console.error)
+    }
     return newEvent.id
-  }, [events, saveEvents])
+  }, [events, saveEvents, user])
 
   const updateEvent = useCallback((id: string, updates: Partial<Event>) => {
     const updatedEvents = events.map(event => {

@@ -171,58 +171,51 @@ export function ToDoTodayApp() {
           {isDailyView ? (
             <>
               {/* MIDDLE CARD — Day header + due items. Perfect square in remaining space. */}
-              {!projectNotesExpanded && (
-                <div
-                  className="flex flex-col flex-shrink-0"
-                  style={{ 
-                    width: middleColumnWidth > 0 ? `${middleColumnWidth}px` : 'auto',
-                    height: dailyExpanded ? 'calc(100vh - 32px)' : (middleColumnWidth > 0 ? `${middleColumnWidth}px` : 'auto'), // Perfect square: height = width
-                    alignSelf: 'flex-start',
-                    transition: 'height 0.3s ease-out',
-                    flexShrink: 0,
-                    position: 'relative',
-                    zIndex: 2, // Increased to ensure it's above the container
-                    overflow: 'hidden',
-                    borderRadius: '18px 12px 12px 18px', // Left corners 18px, right corners 12px
-                    background: '#FFFFFF',
-                    boxShadow: '0 4px 24px rgba(0, 40, 25, 0.18)',
-                  }}
-                >
-                  <DailyView 
-                    date={selectedDate} 
-                    navigate={navigate}
-                    isExpanded={dailyExpanded}
-                    onExpand={() => setDailyExpanded(true)}
-                    onCollapse={() => setDailyExpanded(false)}
-                  />
-                </div>
-              )}
+              <div
+                className="flex flex-col flex-shrink-0"
+                style={{ 
+                  width: middleColumnWidth > 0 ? `${middleColumnWidth}px` : 'auto',
+                  height: dailyExpanded ? 'calc(100vh - 32px)' : (middleColumnWidth > 0 ? `${middleColumnWidth}px` : 'auto'), // Perfect square: height = width
+                  alignSelf: 'flex-start',
+                  transition: 'height 0.3s ease-out',
+                  flexShrink: 0,
+                  position: 'relative',
+                  zIndex: 2, // Increased to ensure it's above the container
+                  overflow: 'hidden',
+                  borderRadius: '18px 12px 12px 18px', // Left corners 18px, right corners 12px
+                  background: '#FFFFFF',
+                  boxShadow: '0 4px 24px rgba(0, 40, 25, 0.18)',
+                }}
+              >
+                <DailyView 
+                  date={selectedDate} 
+                  navigate={navigate}
+                  isExpanded={dailyExpanded}
+                  onExpand={() => setDailyExpanded(true)}
+                  onCollapse={() => setDailyExpanded(false)}
+                />
+              </div>
 
-              {/* PROJECT NOTES CARD — Below daily card, fills remaining space, or covers DailyView when expanded */}
+              {/* UPCOMING EVENTS CARD — Below daily card, fills remaining space */}
               <div
                 className="flex flex-col flex-1"
                 style={{
                   width: middleColumnWidth > 0 ? `${middleColumnWidth}px` : 'auto',
-                  height: projectNotesExpanded ? 'calc(100vh - 32px)' : (dailyExpanded ? 0 : 'auto'),
-                  marginTop: projectNotesExpanded ? '0' : (dailyExpanded ? '0' : '16px'),
+                  height: dailyExpanded ? 0 : 'auto',
+                  marginTop: dailyExpanded ? '0' : '16px',
                   minHeight: 0,
                   position: 'relative',
-                  zIndex: projectNotesExpanded ? 3 : 2, // Higher z-index when expanded to cover DailyView
+                  zIndex: 2,
                   overflow: 'hidden',
                   borderRadius: '18px 12px 12px 18px', // Left corners 18px, right corners 12px
                   background: '#FFFFFF',
                   boxShadow: '0 4px 24px rgba(0, 40, 25, 0.18)',
                   transition: 'height 0.3s ease-out',
-                  opacity: dailyExpanded && !projectNotesExpanded ? 0 : 1,
-                  pointerEvents: dailyExpanded && !projectNotesExpanded ? 'none' : 'auto',
+                  opacity: dailyExpanded ? 0 : 1,
+                  pointerEvents: dailyExpanded ? 'none' : 'auto',
                 }}
               >
-                <ProjectNotesView 
-                  navigate={navigate}
-                  isExpanded={projectNotesExpanded}
-                  onExpand={() => setProjectNotesExpanded(true)}
-                  onCollapse={() => setProjectNotesExpanded(false)}
-                />
+                <UpcomingEvents navigate={navigate} />
               </div>
             </>
           ) : (
@@ -246,7 +239,7 @@ export function ToDoTodayApp() {
           )}
         </div>
 
-        {/* RIGHT AREA — Monthly View + Upcoming Events, stacked vertically */}
+        {/* RIGHT AREA — Monthly View + Project Notes, stacked vertically */}
         {isDailyView && (
           <div 
             className="flex flex-col gap-4 flex-shrink-0" 
@@ -262,13 +255,20 @@ export function ToDoTodayApp() {
             }}
           >
             {/* Monthly View — auto height, only takes space it needs */}
-            <div className="todo-card flex flex-col flex-shrink-0">
-              <MonthlyView selectedDate={selectedDate} navigate={navigate} />
-            </div>
+            {!projectNotesExpanded && (
+              <div className="todo-card flex flex-col flex-shrink-0">
+                <MonthlyView selectedDate={selectedDate} navigate={navigate} />
+              </div>
+            )}
 
-            {/* Upcoming Events — below monthly view, spans to bottom */}
+            {/* Project Notes — below monthly view, spans to bottom */}
             <div className="todo-card flex flex-col flex-1" style={{ minHeight: 0 }}>
-              <UpcomingEvents navigate={navigate} />
+              <ProjectNotesView 
+                navigate={navigate}
+                isExpanded={projectNotesExpanded}
+                onExpand={() => setProjectNotesExpanded(true)}
+                onCollapse={() => setProjectNotesExpanded(false)}
+              />
             </div>
           </div>
         )}

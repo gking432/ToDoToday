@@ -67,13 +67,15 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
   const getTasksForDate = (date: Date) => {
     const dateStr = formatDate(date)
     const isToday = dateStr === todayStr
+    const isPastDate = dateStr < todayStr
     // Get tasks due on this date (including recurring)
-    // For recurring tasks, we want to show them even if completed (so they appear crossed off)
-    // For non-recurring tasks, only show if not completed
+    // Show all tasks (completed and not) so past days act as time capsules
     const tasksForDate = getTasksForDateUtil(store.tasks, date).filter((task) => {
-      // For recurring instances, show them regardless of completion (they'll be styled as crossed off)
+      // For recurring instances, always show
       if (task.parentTaskId) return true
-      // For non-recurring tasks, only show if not completed
+      // For past dates, show all tasks (completed included) as a time capsule
+      if (isPastDate) return true
+      // For today and future, only show if not completed
       return !task.completed
     })
     
@@ -378,9 +380,12 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
             const isDragOver = dragOverDate === dayStr
             const isExpanded = expandedDate === dayStr
             
+            const isPast = dayStr < todayStr
+            
             // Separate regular tasks from overdue tasks
-            const regularTasks = allTasks.filter((task) => !isOverdue(task.dueDate || ''))
-            const overdueTasks = allTasks.filter((task) => isOverdue(task.dueDate || ''))
+            // On past days, treat ALL tasks as regular (no pink overdue styling)
+            const regularTasks = isPast ? allTasks : allTasks.filter((task) => !isOverdue(task.dueDate || ''))
+            const overdueTasks = isPast ? [] : allTasks.filter((task) => isOverdue(task.dueDate || ''))
             
             // Combine: events first, then regular tasks, then overdue tasks
             const totalItems = events.length + regularTasks.length + overdueTasks.length
@@ -440,7 +445,7 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
                       fontFamily: "'DM Sans', sans-serif",
                       fontSize: '12px',
                       fontWeight: isToday ? 700 : 500,
-                      color: isToday ? '#006747' : '#1A2E1A',
+                      color: isToday ? '#006747' : isPast ? '#9CA3AF' : '#1A2E1A',
                     }}
                   >
                     {format(day, 'd')}
@@ -450,7 +455,7 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
                 {/* Task and Event pills */}
                 {(regularTasks.length > 0 || overdueTasks.length > 0 || events.length > 0) && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '100%', minWidth: 0 }}>
-                    {/* Events with pink outline - shown first */}
+                    {/* Events with pink outline - shown first (grey on past days) */}
                     {(isExpanded ? events : events.slice(0, 2)).map((event) => (
                       <div
                         key={event.id}
@@ -466,9 +471,9 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
                           fontWeight: isExpanded ? 600 : 500,
                           padding: isExpanded ? '8px 10px' : '2px 6px',
                           borderRadius: isExpanded ? '8px' : '20px',
-                          backgroundColor: '#FFFFFF',
-                          color: '#1A2E1A',
-                          border: '1px solid #F78FB3',
+                          backgroundColor: isPast ? '#F3F4F6' : '#FFFFFF',
+                          color: isPast ? '#9CA3AF' : '#1A2E1A',
+                          border: isPast ? '1px solid #D1D5DB' : '1px solid #EAB308',
                           whiteSpace: isExpanded ? 'normal' : ('nowrap' as const),
                           overflow: isExpanded ? 'visible' : 'hidden',
                           textOverflow: isExpanded ? 'clip' : 'ellipsis',
@@ -539,7 +544,7 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
                         )}
                       </div>
                     ))}
-                    {/* Regular tasks with green outline - shown after events */}
+                    {/* Regular tasks with green outline - shown after events (grey on past days) */}
                     {(isExpanded ? regularTasks : regularTasks.slice(0, Math.max(0, 2 - events.length))).map((task) => {
                       return (
                         <div
@@ -554,9 +559,9 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
                             fontWeight: 500,
                             padding: '2px 6px',
                             borderRadius: '20px',
-                            backgroundColor: '#FFFFFF',
-                            color: '#1A2E1A',
-                            border: '1px solid #006747',
+                            backgroundColor: isPast ? '#F3F4F6' : '#FFFFFF',
+                            color: isPast ? '#9CA3AF' : '#1A2E1A',
+                            border: isPast ? '1px solid #D1D5DB' : '1px solid #006747',
                             whiteSpace: 'nowrap' as const,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',

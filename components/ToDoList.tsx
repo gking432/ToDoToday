@@ -191,12 +191,17 @@ export function ToDoList() {
   }
 
   const handleCalendarSelect = (date: string | null, recurrence?: any) => {
+    const wasNewTask = pendingTaskId !== null && !editingTaskId
     if (pendingTaskId) {
       // Update the task's due date and recurrence (either new task or editing existing)
       store.updateTask(pendingTaskId, { dueDate: date, recurrence: recurrence || null })
       setPendingTaskId(null)
     }
     setShowCalendar(false)
+    // If this was a new task flow, re-show the input for rapid task creation
+    if (wasNewTask) {
+      setShowInput(true)
+    }
   }
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -1145,6 +1150,7 @@ function TaskRow({
         <div className="flex items-start gap-1 flex-shrink-0" style={{ paddingTop: '2px' }}>
           {/* Calendar icon for due date */}
           <button
+            onMouseDown={(e) => e.preventDefault()}
             onClick={(e) => {
               e.stopPropagation()
               setPendingTaskId(task.id)
@@ -1160,6 +1166,7 @@ function TaskRow({
 
           {/* Trash icon to delete task */}
           <button
+            onMouseDown={(e) => e.preventDefault()}
             onClick={(e) => {
               e.stopPropagation()
               setShowDeleteConfirm(true)
@@ -1253,9 +1260,15 @@ function TaskRow({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  store.deleteTask(task.id)
+                  // For recurring tasks, use parentTaskId if it exists, otherwise use task.id
+                  const taskIdToDelete = task.parentTaskId || task.id
+                  store.deleteTask(taskIdToDelete)
                   setShowDeleteConfirm(false)
                   setShowActions(false)
+                  // Exit edit mode after deletion
+                  setEditingTaskId(null)
+                  setEditingTaskText('')
+                  setEditingSubtasks([])
                 }}
                 style={{
                   padding: '8px 16px',

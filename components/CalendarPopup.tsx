@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, addMonths, subMonths, getDay } from 'date-fns'
@@ -37,6 +37,27 @@ export function CalendarPopup({
     daysOfWeek: undefined,
   })
   const todayStr = formatDate(new Date())
+
+  // Handle Enter key — if no date selected, treat as "no due date"
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      e.stopPropagation()
+      if (selectedDate) {
+        // A date is selected — confirm it
+        onSelectDate(selectedDate, showRecurrence ? recurrence : null)
+      } else {
+        // No date selected — default to no due date
+        onSelectDate(null)
+      }
+      onClose()
+    }
+  }, [selectedDate, showRecurrence, recurrence, onSelectDate, onClose])
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
 
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)
