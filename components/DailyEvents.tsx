@@ -96,9 +96,10 @@ export function DailyEvents({ date }: DailyEventsProps) {
     
     store.updateEvent(editingEventId, {
       text: formData.title.trim(),
-      hour: formData.startHour,
-      endHour: formData.endHour,
+      hour: formData.allDay ? 0 : formData.startHour,
+      endHour: formData.allDay ? undefined : formData.endHour,
       location: formData.location.trim() || undefined,
+      allDay: formData.allDay,
     })
     
     // Reset form

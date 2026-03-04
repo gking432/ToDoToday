@@ -636,17 +636,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     endHour?: number,
     location?: string,
     minutes?: number,
-    endMinutes?: number
+    endMinutes?: number,
+    allDay?: boolean
   ): string => {
     const newEvent: Event = {
       id: crypto.randomUUID(),
       text,
       date,
-      hour,
-      minutes: minutes ?? 0,
-      endHour,
-      endMinutes: endMinutes ?? 0,
+      hour: allDay ? 0 : hour,
+      minutes: allDay ? 0 : (minutes ?? 0),
+      endHour: allDay ? undefined : endHour,
+      endMinutes: allDay ? 0 : (endMinutes ?? 0),
       location,
+      allDay: allDay || false,
       createdAt: new Date().toISOString(),
       sourceTaskId,
     }
