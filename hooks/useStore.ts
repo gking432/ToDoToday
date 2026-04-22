@@ -138,7 +138,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         
         // Merge tasks: use most recent updatedAt
         const mergedTasks = mergeByTimestamp(localTasks, supabaseTasks, 'updatedAt')
-        const mergedEvents = mergeByTimestamp(localEvents, supabaseEvents, 'createdAt')
+        const mergedEvents = mergeByTimestamp(localEvents, supabaseEvents, 'updatedAt')
         const mergedJournal = mergeJournalEntries(localJournal, supabaseJournal)
         const mergedProjects = mergeByTimestamp(localProjects, supabaseProjects, 'updatedAt')
         
@@ -219,8 +219,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (existingIndex >= 0) {
         // Update existing event only if remote is newer
         const existing = currentEvents[existingIndex]
-        const existingTime = new Date(existing.createdAt).getTime()
-        const remoteTime = new Date(event.createdAt).getTime()
+        const existingTime = new Date(existing.updatedAt || existing.createdAt).getTime()
+        const remoteTime = new Date(event.updatedAt || event.createdAt).getTime()
         if (remoteTime > existingTime) {
           const updated = [...currentEvents]
           updated[existingIndex] = event
@@ -382,18 +382,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Save tasks to localStorage (Supabase sync handled by individual operations)
   const saveTasks = useCallback((newTasks: Task[]) => {
-    // Add updatedAt to all tasks
-    const tasksWithTimestamp = newTasks.map(task => ({
-      ...task,
-      updatedAt: new Date().toISOString(),
-    }))
-    
-    setTasks(tasksWithTimestamp)
+    setTasks(newTasks)
     if (typeof window !== 'undefined') {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasksWithTimestamp))
+      localStorage.setItem(TASKS_KEY, JSON.stringify(newTasks))
     }
     
-    return tasksWithTimestamp
+    return newTasks
   }, [])
 
   // Save journal to localStorage (Supabase sync handled by individual operations)
@@ -431,6 +425,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       priority: null,
       scheduledSlots: [],
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       order: tasks.length,
       subtasks: subtasks && subtasks.length > 0 ? subtasks.filter(s => s.text.trim()) : undefined,
       recurrence: recurrence || null,
@@ -650,6 +645,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       location,
       allDay: allDay || false,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       sourceTaskId,
     }
     saveEvents([...events, newEvent])
@@ -664,7 +660,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateEvent = useCallback((id: string, updates: Partial<Event>) => {
     const updatedEvents = events.map(event => {
       if (event.id === id) {
-        return { ...event, ...updates }
+        return { ...event, ...updates, updatedAt: new Date().toISOString() }
       }
       return event
     })

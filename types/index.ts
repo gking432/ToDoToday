@@ -45,6 +45,7 @@ export interface Event {
   location?: string // Optional location
   allDay?: boolean // If true, event has no specific time slot
   createdAt: string // ISO datetime string
+  updatedAt?: string // ISO datetime string - for sync conflict resolution
   sourceTaskId?: string // If this event was created from a task, reference the original task
   recurrence?: RecurrencePattern | null // Recurrence pattern for repeating events
   parentEventId?: string | null // If this is an instance of a recurring event, reference the parent
