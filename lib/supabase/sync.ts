@@ -119,13 +119,10 @@ function appProjectToDb(project: Project): any {
 // Tasks
 export async function syncTasksToSupabase(userId: string, tasks: Task[]): Promise<void> {
   const dbTasks = tasks.map(appTaskToDb).map(task => ({ ...task, user_id: userId }))
-  
-  // Delete all existing tasks for this user
-  await supabase.from('tasks').delete().eq('user_id', userId)
-  
-  // Insert all tasks
+
+  // Upsert avoids destructive full-table rewrites during startup sync.
   if (dbTasks.length > 0) {
-    const { error } = await supabase.from('tasks').insert(dbTasks)
+    const { error } = await supabase.from('tasks').upsert(dbTasks)
     if (error) throw error
   }
 }
@@ -159,11 +156,9 @@ export async function deleteTaskFromSupabase(userId: string, taskId: string): Pr
 // Events
 export async function syncEventsToSupabase(userId: string, events: Event[]): Promise<void> {
   const dbEvents = events.map(appEventToDb).map(event => ({ ...event, user_id: userId }))
-  
-  await supabase.from('events').delete().eq('user_id', userId)
-  
+
   if (dbEvents.length > 0) {
-    const { error } = await supabase.from('events').insert(dbEvents)
+    const { error } = await supabase.from('events').upsert(dbEvents)
     if (error) throw error
   }
 }
@@ -238,11 +233,9 @@ export async function upsertJournalEntryToSupabase(userId: string, entry: Journa
 // Projects
 export async function syncProjectsToSupabase(userId: string, projects: Project[]): Promise<void> {
   const dbProjects = projects.map(appProjectToDb).map(project => ({ ...project, user_id: userId }))
-  
-  await supabase.from('projects').delete().eq('user_id', userId)
-  
+
   if (dbProjects.length > 0) {
-    const { error } = await supabase.from('projects').insert(dbProjects)
+    const { error } = await supabase.from('projects').upsert(dbProjects)
     if (error) throw error
   }
 }
