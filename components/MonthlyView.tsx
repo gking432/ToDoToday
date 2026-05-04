@@ -17,7 +17,8 @@ import {
   subMonths,
   isSameDay,
 } from 'date-fns'
-import type { ViewMode } from '@/types'
+import type { ViewMode, Task, Event } from '@/types'
+import { RecurringDeleteModal } from './RecurringDeleteModal'
 
 interface MonthlyViewProps {
   selectedDate: Date
@@ -47,6 +48,8 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
   const [showDateChangeConfirm, setShowDateChangeConfirm] = useState(false)
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null)
   const [pendingDate, setPendingDate] = useState<Date | null>(null)
+  const [taskForDelete, setTaskForDelete] = useState<Task | null>(null)
+  const [eventForDelete, setEventForDelete] = useState<Event | null>(null)
 
   // Sync currentMonth with selectedDate when it changes
   useEffect(() => {
@@ -458,12 +461,16 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
                     {/* Events with pink outline - shown first (grey on past days) */}
                     {(isExpanded ? events : events.slice(0, 2)).map((event) => (
                       <div
-                        key={event.id}
+                        key={`${event.parentEventId || event.id}-${event.date}`}
                         onClick={(e) => {
+                          e.stopPropagation()
                           if (!isExpanded) {
-                            e.stopPropagation()
                             setExpandedDate(dayStr)
                           }
+                        }}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation()
+                          setEventForDelete(event)
                         }}
                         style={{
                           fontSize: isExpanded ? '11px' : '10px',
@@ -548,11 +555,15 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
                     {(isExpanded ? regularTasks : regularTasks.slice(0, Math.max(0, 2 - events.length))).map((task) => {
                       return (
                         <div
-                          key={task.id}
+                          key={`${task.parentTaskId || task.id}-${task.dueDate ?? ''}`}
                           draggable
                           onDragStart={(e) => handleDragStart(e, task.id)}
                           onDragEnd={handleDragEnd}
                           onClick={(e) => e.stopPropagation()}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation()
+                            setTaskForDelete(task)
+                          }}
                           style={{
                             fontSize: '10px',
                             fontFamily: "'DM Sans', sans-serif",
@@ -587,11 +598,15 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
                     {(isExpanded ? overdueTasks : overdueTasks.slice(0, Math.max(0, 2 - events.length - regularTasks.length))).map((task) => {
                       return (
                         <div
-                          key={task.id}
+                          key={`${task.parentTaskId || task.id}-${task.dueDate ?? ''}-overdue`}
                           draggable
                           onDragStart={(e) => handleDragStart(e, task.id)}
                           onDragEnd={handleDragEnd}
                           onClick={(e) => e.stopPropagation()}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation()
+                            setTaskForDelete(task)
+                          }}
                           style={{
                             fontSize: '10px',
                             fontFamily: "'DM Sans', sans-serif",
@@ -675,6 +690,67 @@ export function MonthlyView({ selectedDate, navigate }: MonthlyViewProps) {
           })}
         </div>
       </div>
+
+      <RecurringDeleteModal
+        open={!!taskForDelete}
+        variant="task"
+        isRecurring={
+          !!(
+            taskForDelete &&
+            store.tasks.find((t) => t.id === (taskForDelete.parentTaskId || taskForDelete.id))?.recurrence
+          )
+        }
+        onCancel={() => setTaskForDelete(null)}
+        onDeleteSeries={() => {
+          if (taskForDelete) {
+            store.deleteTask(taskForDelete.parentTaskId || taskForDelete.id)
+          }
+          setTaskForDelete(null)
+        }}
+        onDeleteSingle={() => {
+          if (taskForDelete?.dueDate) {
+            store.deleteTask(taskForDelete.parentTaskId || taskForDelete.id, taskForDelete.dueDate)
+          }
+          setTaskForDelete(null)
+        }}
+        onDeletePlain={() => {
+          if (taskForDelete) {
+            store.deleteTask(taskForDelete.parentTaskId || taskForDelete.id)
+          }
+          setTaskForDelete(null)
+        }}
+      />
+
+      <RecurringDeleteModal
+        open={!!eventForDelete}
+        variant="event"
+        isRecurring={
+          !!(
+            eventForDelete &&
+            store.events.find((e) => e.id === (eventForDelete.parentEventId || eventForDelete.id))?.recurrence
+          )
+        }
+        onCancel={() => setEventForDelete(null)}
+        onDeleteSeries={() => {
+          if (eventForDelete) {
+            store.deleteEvent(eventForDelete.parentEventId || eventForDelete.id)
+          }
+          setEventForDelete(null)
+        }}
+        onDeleteSingle={() => {
+          if (eventForDelete) {
+            const pid = eventForDelete.parentEventId || eventForDelete.id
+            store.deleteEvent(pid, eventForDelete.date)
+          }
+          setEventForDelete(null)
+        }}
+        onDeletePlain={() => {
+          if (eventForDelete) {
+            store.deleteEvent(eventForDelete.parentEventId || eventForDelete.id)
+          }
+          setEventForDelete(null)
+        }}
+      />
 
       {/* Event Creation Popup */}
       {/* Choice Dialog */}
