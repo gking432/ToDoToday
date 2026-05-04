@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { format, addDays, addMonths } from 'date-fns'
 import { Plus, X, Edit2, Trash2, Calendar as CalendarIcon, ChevronUp, ChevronDown, SlidersHorizontal, Repeat } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
-import { formatDate, isEventEnded, expandEventsForDateRange } from '@/lib/utils'
+import { formatDate, isEventEnded, generateRecurringDates, formatRecurrenceSummary } from '@/lib/utils'
 import { CalendarPopup } from './CalendarPopup'
 import { RecurringDeleteModal } from './RecurringDeleteModal'
 import type { ViewMode, Event, RecurrencePattern } from '@/types'
@@ -69,18 +69,39 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
   
   const endDateStr = formatDate(getEndDate())
   
-  const upcomingEvents = useMemo(() => {
-    const expanded = expandEventsForDateRange(store.events, todayStr, endDateStr)
-    return expanded
-      .filter((event) => {
-        if (isEventEnded(event)) return false
-        return event.date >= todayStr && event.date <= endDateStr
-      })
+  /** One row per event; recurring series appear once with the next in-window occurrence for sort / “Next”. */
+  const upcomingItems = useMemo(() => {
+    const pickListDate = (e: Event, dateCandidates: string[]): string | null => {
+      for (const d of dateCandidates) {
+        if (e.excludedDates?.includes(d)) continue
+        if (!isEventEnded({ ...e, date: d })) return d
+      }
+      return null
+    }
+
+    const items: { event: Event; listDate: string; isRecurringSeries: boolean }[] = []
+
+    for (const e of store.events) {
+      if (e.parentEventId) continue
+
+      if (!e.recurrence) {
+        if (e.date < todayStr || e.date > endDateStr) continue
+        if (isEventEnded(e)) continue
+        items.push({ event: e, listDate: e.date, isRecurringSeries: false })
+        continue
+      }
+
+      const dates = generateRecurringDates(e.date, e.recurrence, endDateStr)
+      const inWindow = dates.filter((d) => d >= todayStr && d <= endDateStr)
+      const listDate = pickListDate(e, inWindow)
+      if (!listDate) continue
+      items.push({ event: e, listDate, isRecurringSeries: true })
+    }
+
+    return items
       .sort((a, b) => {
-        if (a.date !== b.date) {
-          return a.date.localeCompare(b.date)
-        }
-        return a.hour - b.hour
+        if (a.listDate !== b.listDate) return a.listDate.localeCompare(b.listDate)
+        return a.event.hour - b.event.hour
       })
       .slice(0, 5)
   }, [store.events, todayStr, endDateStr])
@@ -1234,7 +1255,7 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
           </div>
         )}
 
-        {upcomingEvents.length === 0 && !showForm && !editingEventId ? (
+        {upcomingItems.length === 0 && !showForm && !editingEventId ? (
           <div
             style={{
               fontFamily: "'DM Sans', sans-serif",
@@ -1248,14 +1269,17 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {upcomingEvents.map((event) => {
-              const isToday = event.date === todayStr
-              const series = store.events.find((e) => e.id === (event.parentEventId || event.id))
-              const isSeriesRecurring = !!series?.recurrence
+            {upcomingItems.map((item) => {
+              const { event, listDate, isRecurringSeries } = item
+              const isToday = listDate === todayStr
+              const recurrence = event.recurrence
+              const deleteTarget: Event = isRecurringSeries
+                ? ({ ...event, date: listDate, parentEventId: event.id } as Event)
+                : event
 
               return (
                 <div
-                  key={`${event.parentEventId || event.id}-${event.date}`}
+                  key={event.id}
                   style={{
                     padding: '10px 12px',
                     borderRadius: '10px',
@@ -1288,73 +1312,130 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
                     >
                       {event.text}
                     </div>
-                    {isSeriesRecurring && (
+                    {isRecurringSeries && recurrence && (
                       <div
                         style={{
                           fontFamily: "'DM Sans', sans-serif",
-                          fontSize: '10px',
-                          color: '#006747',
-                          fontWeight: 600,
-                          marginBottom: '4px',
+                          fontSize: '11px',
+                          color: '#5A7A5E',
+                          marginBottom: '6px',
+                          lineHeight: 1.45,
                         }}
                       >
-                        Repeats
+                        {formatRecurrenceSummary(recurrence)}
                       </div>
                     )}
-                    <div
-                      style={{
-                        fontFamily: "'DM Sans', sans-serif",
-                        fontSize: '11px',
-                        color: isToday ? '#006747' : '#5A7A5E',
-                        marginBottom: event.location ? '4px' : '0',
-                      }}
-                    >
-                      {isToday ? (
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate('daily', new Date())
-                          }}
-                          style={{
-                            cursor: 'pointer',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = '#006747'
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = '#006747'
-                          }}
-                        >
-                          Today {event.allDay ? '' : `at ${formatTimeRange(event.hour, event.endHour, event.minutes, event.endMinutes)}`}
-                          {event.allDay && <span style={{ fontStyle: 'italic' }}>— All Day</span>}
-                        </span>
-                      ) : (() => {
-                          const [year, month, day] = event.date.split('-').map(Number)
-                          const eventDate = new Date(year, month - 1, day)
-                          const dateText = event.allDay 
-                            ? `${format(eventDate, 'MMM d')} — All Day`
-                            : `${format(eventDate, 'MMM d')} at ${formatTimeRange(event.hour, event.endHour, event.minutes, event.endMinutes)}`
-                          return (
-                            <span
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                navigate('daily', eventDate)
-                              }}
-                              style={{
-                                cursor: 'pointer',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.color = '#006747'
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.color = '#5A7A5E'
-                              }}
-                            >
-                              {dateText}
-                            </span>
-                          )
-                        })()}
-                    </div>
+                    {!isRecurringSeries && (
+                      <div
+                        style={{
+                          fontFamily: "'DM Sans', sans-serif",
+                          fontSize: '11px',
+                          color: isToday ? '#006747' : '#5A7A5E',
+                          marginBottom: event.location ? '4px' : '0',
+                        }}
+                      >
+                        {isToday ? (
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate('daily', new Date())
+                            }}
+                            style={{
+                              cursor: 'pointer',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = '#006747'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = '#006747'
+                            }}
+                          >
+                            Today {event.allDay ? '' : `at ${formatTimeRange(event.hour, event.endHour, event.minutes, event.endMinutes)}`}
+                            {event.allDay && <span style={{ fontStyle: 'italic' }}>— All Day</span>}
+                          </span>
+                        ) : (() => {
+                            const [year, month, day] = event.date.split('-').map(Number)
+                            const eventDate = new Date(year, month - 1, day)
+                            const dateText = event.allDay 
+                              ? `${format(eventDate, 'MMM d')} — All Day`
+                              : `${format(eventDate, 'MMM d')} at ${formatTimeRange(event.hour, event.endHour, event.minutes, event.endMinutes)}`
+                            return (
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  navigate('daily', eventDate)
+                                }}
+                                style={{
+                                  cursor: 'pointer',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color = '#006747'
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color = '#5A7A5E'
+                                }}
+                              >
+                                {dateText}
+                              </span>
+                            )
+                          })()}
+                      </div>
+                    )}
+                    {isRecurringSeries && (
+                      <div
+                        style={{
+                          fontFamily: "'DM Sans', sans-serif",
+                          fontSize: '11px',
+                          color: isToday ? '#006747' : '#5A7A5E',
+                          marginBottom: event.location ? '4px' : '0',
+                        }}
+                      >
+                        {isToday ? (
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate('daily', new Date())
+                            }}
+                            style={{ cursor: 'pointer' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = '#006747'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = '#006747'
+                            }}
+                          >
+                            Next today
+                            {!event.allDay && ` · ${formatTimeRange(event.hour, event.endHour, event.minutes, event.endMinutes)}`}
+                            {event.allDay && (
+                              <span style={{ fontStyle: 'italic' }}> · All day</span>
+                            )}
+                          </span>
+                        ) : (() => {
+                            const [y, m, d] = listDate.split('-').map(Number)
+                            const nextDate = new Date(y, m - 1, d)
+                            const line = event.allDay
+                              ? `Next: ${format(nextDate, 'MMM d')} · All day`
+                              : `Next: ${format(nextDate, 'MMM d')} · ${formatTimeRange(event.hour, event.endHour, event.minutes, event.endMinutes)}`
+                            return (
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  navigate('daily', nextDate)
+                                }}
+                                style={{ cursor: 'pointer' }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color = '#006747'
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color = '#5A7A5E'
+                                }}
+                              >
+                                {line}
+                              </span>
+                            )
+                          })()}
+                      </div>
+                    )}
                     {event.location && (
                       <div
                         style={{
@@ -1396,7 +1477,7 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
                         <Edit2 size={14} />
                       </button>
                       <button
-                        onClick={() => handleRequestDeleteEvent(event)}
+                        onClick={() => handleRequestDeleteEvent(deleteTarget)}
                         style={{
                           background: 'none',
                           border: 'none',

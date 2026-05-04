@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import type { RecurrencePattern } from '@/types'
-import { addDays, addWeeks, addMonths, getDay, isBefore, isAfter, isSameDay, parseISO } from 'date-fns'
+import { addDays, addWeeks, addMonths, getDay, isBefore, isAfter, isSameDay, parseISO, format } from 'date-fns'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -194,6 +194,55 @@ export function matchesRecurrence(
   }
 
   return false
+}
+
+/** Human-readable recurrence line for UI (e.g. upcoming events panel). */
+export function formatRecurrenceSummary(pattern: RecurrencePattern): string {
+  const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+  let suffix = ''
+  if (pattern.endDate) {
+    try {
+      suffix = ` until ${format(parseISO(pattern.endDate), 'MMM d, yyyy')}`
+    } catch {
+      suffix = ' until end date'
+    }
+  } else if (pattern.endAfter != null && pattern.endAfter > 0) {
+    suffix = `, ${pattern.endAfter} occurrence${pattern.endAfter === 1 ? '' : 's'}`
+  }
+
+  if (pattern.frequency === 'daily') {
+    const base =
+      pattern.interval === 1 ? 'Repeats every day' : `Repeats every ${pattern.interval} days`
+    return base + suffix
+  }
+
+  if (pattern.frequency === 'weekly') {
+    const days = (pattern.daysOfWeek ?? [])
+      .slice()
+      .sort((a, b) => a - b)
+      .map((d) => WEEKDAYS[d] ?? String(d))
+      .join(', ')
+    const base =
+      pattern.interval === 1
+        ? days
+          ? `Repeats every week on ${days}`
+          : 'Repeats every week'
+        : days
+          ? `Repeats every ${pattern.interval} weeks on ${days}`
+          : `Repeats every ${pattern.interval} weeks`
+    return base + suffix
+  }
+
+  if (pattern.frequency === 'monthly') {
+    const base =
+      pattern.interval === 1
+        ? 'Repeats every month'
+        : `Repeats every ${pattern.interval} months`
+    return base + suffix
+  }
+
+  return 'Repeats' + suffix
 }
 
 /**
