@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { X, Calendar as CalendarIcon, Plus, List, Edit2, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { Task, Subtask } from '@/types'
 import { useStore } from '@/hooks/useStore'
 import { getDaysUntilDue, isOverdue, formatDate, wasCompletedToday, getTasksForDate } from '@/lib/utils'
 import { format } from 'date-fns'
 import { CalendarPopup } from './CalendarPopup'
+import { RecurringDeleteModal } from './RecurringDeleteModal'
 
 export function ToDoList() {
   const store = useStore()
@@ -781,6 +781,9 @@ function TaskRow({
   const editingContainerRef = useRef<HTMLDivElement | null>(null)
   const dueStatus = getDueDateStatus(task)
   const isEditing = editingTaskId === task.id
+  const isRecurringTask = !!task.recurrence
+  const seriesTaskId = task.parentTaskId || task.id
+  const instanceDateStr = task.dueDate
 
   // Focus input when editing starts
   useEffect(() => {
@@ -1181,120 +1184,38 @@ function TaskRow({
         </div>
       )}
 
-      {/* Delete confirmation popup — use portal to render at document.body level */}
-      {showDeleteConfirm && typeof window !== 'undefined' && createPortal(
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowDeleteConfirm(false)
-            }
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: '12px',
-              padding: '24px',
-              maxWidth: '400px',
-              width: '90%',
-              boxShadow: '0 4px 24px rgba(0, 40, 25, 0.18)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: '16px',
-                fontWeight: 600,
-                color: '#1A2E1A',
-                marginBottom: '12px',
-              }}
-            >
-              Are you sure you want to delete?
-            </h3>
-            <p
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: '13px',
-                color: '#5A7A5E',
-                marginBottom: '20px',
-              }}
-            >
-              This task will be permanently removed.
-            </p>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '1px solid #E8EFE6',
-                  backgroundColor: 'transparent',
-                  color: '#5A7A5E',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F5F9F7'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  // For recurring tasks, use parentTaskId if it exists, otherwise use task.id
-                  const taskIdToDelete = task.parentTaskId || task.id
-                  store.deleteTask(taskIdToDelete)
-                  setShowDeleteConfirm(false)
-                  setShowActions(false)
-                  // Exit edit mode after deletion
-                  setEditingTaskId(null)
-                  setEditingTaskText('')
-                  setEditingSubtasks([])
-                }}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: '#006747',
-                  color: '#FFFFFF',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#005238'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#006747'
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      <RecurringDeleteModal
+        open={showDeleteConfirm}
+        variant="task"
+        isRecurring={isRecurringTask}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onDeleteSeries={() => {
+          store.deleteTask(seriesTaskId)
+          setShowDeleteConfirm(false)
+          setShowActions(false)
+          setEditingTaskId(null)
+          setEditingTaskText('')
+          setEditingSubtasks([])
+        }}
+        onDeleteSingle={() => {
+          if (instanceDateStr) {
+            store.deleteTask(seriesTaskId, instanceDateStr)
+          }
+          setShowDeleteConfirm(false)
+          setShowActions(false)
+          setEditingTaskId(null)
+          setEditingTaskText('')
+          setEditingSubtasks([])
+        }}
+        onDeletePlain={() => {
+          store.deleteTask(seriesTaskId)
+          setShowDeleteConfirm(false)
+          setShowActions(false)
+          setEditingTaskId(null)
+          setEditingTaskText('')
+          setEditingSubtasks([])
+        }}
+      />
     </div>
   )
 }

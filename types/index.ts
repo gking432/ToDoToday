@@ -27,6 +27,8 @@ export interface Task {
   recurrence?: RecurrencePattern | null // Recurrence pattern for repeating tasks
   parentTaskId?: string | null // If this is an instance of a recurring task, reference the parent
   completedDates?: string[] // For recurring tasks: array of ISO date strings when task was completed
+  /** Dates to hide for recurring tasks when user deletes a single occurrence */
+  excludedDates?: string[]
 }
 
 export interface ScheduledSlot {
@@ -49,6 +51,8 @@ export interface Event {
   sourceTaskId?: string // If this event was created from a task, reference the original task
   recurrence?: RecurrencePattern | null // Recurrence pattern for repeating events
   parentEventId?: string | null // If this is an instance of a recurring event, reference the parent
+  /** Dates to hide for recurring events when user deletes a single occurrence */
+  excludedDates?: string[]
 }
 
 export interface JournalEntry {

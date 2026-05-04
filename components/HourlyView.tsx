@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { ArrowLeft, X } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
-import { formatDate } from '@/lib/utils'
+import { formatDate, getEventsForDate } from '@/lib/utils'
 import { format } from 'date-fns'
 import type { ViewMode } from '@/types'
+import type { Event } from '@/types'
+import { RecurringDeleteModal } from './RecurringDeleteModal'
 
 interface HourlyViewProps {
   date: Date
@@ -15,12 +17,21 @@ interface HourlyViewProps {
 export function HourlyView({ date, navigate }: HourlyViewProps) {
   const store = useStore()
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null)
+  const [eventToDelete, setEventToDelete] = useState<Event | null>(null)
   const dateStr = formatDate(date)
+
+  const eventsForDate = useMemo(
+    () => getEventsForDate<Event>(store.events, date),
+    [store.events, date]
+  )
 
   const hours = Array.from({ length: 18 }, (_, i) => i + 6) // 6 AM – 11 PM
 
   const getEventsForSlot = (hour: number) => {
-    return store.events.filter((event) => event.date === dateStr && event.hour === hour)
+    return eventsForDate.filter((event) => {
+      if (event.allDay) return false
+      return event.hour === hour
+    })
   }
 
   const handleDragOver = (e: React.DragEvent, hour: number) => {
@@ -38,16 +49,11 @@ export function HourlyView({ date, navigate }: HourlyViewProps) {
     const task = store.tasks.find((t) => t.id === taskId)
     if (!task) return
 
-    // Create an event from the task
     store.addEvent(task.text, dateStr, hour, task.id)
   }
 
   const handleDragLeave = () => {
     setDragOverSlot(null)
-  }
-
-  const removeEventFromSlot = (eventId: string) => {
-    store.deleteEvent(eventId)
   }
 
   const formatHour = (hour: number) => {
@@ -58,7 +64,6 @@ export function HourlyView({ date, navigate }: HourlyViewProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Green header */}
       <div className="card-header flex-shrink-0">
         <div className="flex items-center gap-3">
           <button
@@ -94,7 +99,6 @@ export function HourlyView({ date, navigate }: HourlyViewProps) {
         </div>
       </div>
 
-      {/* White body — hourly slots */}
       <div className="flex-1 overflow-y-auto" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {hours.map((hour) => {
@@ -116,7 +120,6 @@ export function HourlyView({ date, navigate }: HourlyViewProps) {
                   border: isDragOver ? '2px dashed #FFD700' : '2px solid transparent',
                 }}
               >
-                {/* Time label */}
                 <div
                   className="flex-shrink-0"
                   style={{
@@ -131,7 +134,6 @@ export function HourlyView({ date, navigate }: HourlyViewProps) {
                   {formatHour(hour)}
                 </div>
 
-                {/* Events or drop hint */}
                 <div className="flex-1 min-w-0">
                   {events.length === 0 ? (
                     <div
@@ -149,7 +151,7 @@ export function HourlyView({ date, navigate }: HourlyViewProps) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {events.map((event) => (
                         <div
-                          key={event.id}
+                          key={`${event.parentEventId || event.id}-${event.date}-${event.hour}`}
                           className="flex items-center justify-between gap-2"
                           style={{
                             padding: '5px 10px',
@@ -169,7 +171,8 @@ export function HourlyView({ date, navigate }: HourlyViewProps) {
                             {event.text}
                           </span>
                           <button
-                            onClick={() => removeEventFromSlot(event.id)}
+                            type="button"
+                            onClick={() => setEventToDelete(event)}
                             style={{
                               background: 'none',
                               border: 'none',
@@ -193,6 +196,39 @@ export function HourlyView({ date, navigate }: HourlyViewProps) {
           })}
         </div>
       </div>
+
+      <RecurringDeleteModal
+        open={!!eventToDelete}
+        variant="event"
+        isRecurring={
+          !!(
+            eventToDelete &&
+            store.events.find((e) => e.id === (eventToDelete.parentEventId || eventToDelete.id))?.recurrence
+          )
+        }
+        onCancel={() => setEventToDelete(null)}
+        onDeleteSeries={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid)
+          }
+          setEventToDelete(null)
+        }}
+        onDeleteSingle={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid, eventToDelete.date)
+          }
+          setEventToDelete(null)
+        }}
+        onDeletePlain={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid)
+          }
+          setEventToDelete(null)
+        }}
+      />
     </div>
   )
 }

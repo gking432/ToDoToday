@@ -20,6 +20,7 @@ export function dbTaskToApp(dbTask: any): Task {
     recurrence: dbTask.recurrence,
     parentTaskId: dbTask.parent_task_id,
     completedDates: dbTask.completed_dates || [],
+    excludedDates: dbTask.excluded_dates || [],
   }
 }
 
@@ -39,6 +40,7 @@ function appTaskToDb(task: Task): any {
     recurrence: task.recurrence,
     parent_task_id: task.parentTaskId,
     completed_dates: task.completedDates || [],
+    excluded_dates: task.excludedDates || [],
   }
 }
 
@@ -58,6 +60,7 @@ export function dbEventToApp(dbEvent: any): Event {
     sourceTaskId: dbEvent.source_task_id,
     recurrence: dbEvent.recurrence,
     parentEventId: dbEvent.parent_event_id,
+    excludedDates: dbEvent.excluded_dates || [],
   }
 }
 
@@ -77,6 +80,7 @@ function appEventToDb(event: Event): any {
     source_task_id: event.sourceTaskId,
     recurrence: event.recurrence,
     parent_event_id: event.parentEventId,
+    excluded_dates: event.excludedDates || [],
   }
 }
 

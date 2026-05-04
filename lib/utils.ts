@@ -199,7 +199,7 @@ export function matchesRecurrence(
 /**
  * Get all tasks that should appear on a given date (including recurring tasks)
  */
-export function getTasksForDate<T extends { dueDate: string | null; recurrence?: any; parentTaskId?: string | null; id: string; completed?: boolean; completedDates?: string[] }>(
+export function getTasksForDate<T extends { dueDate: string | null; recurrence?: any; parentTaskId?: string | null; id: string; completed?: boolean; completedDates?: string[]; excludedDates?: string[] }>(
   tasks: T[],
   date: Date
 ): T[] {
@@ -212,6 +212,7 @@ export function getTasksForDate<T extends { dueDate: string | null; recurrence?:
 
     // Direct match
     if (task.dueDate === dateStr) {
+      if (task.recurrence && task.excludedDates?.includes(dateStr)) continue
       result.push(task)
       continue
     }
@@ -219,6 +220,7 @@ export function getTasksForDate<T extends { dueDate: string | null; recurrence?:
     // Check recurrence
     if (task.recurrence && task.dueDate) {
       if (matchesRecurrence(dateStr, task.dueDate, task.recurrence)) {
+        if (task.excludedDates?.includes(dateStr)) continue
         // For recurring tasks, check if this specific date instance is completed
         const isInstanceCompleted = task.completedDates?.includes(dateStr) || false
         // Create a virtual instance for this date
@@ -238,7 +240,7 @@ export function getTasksForDate<T extends { dueDate: string | null; recurrence?:
 /**
  * Get all events that should appear on a given date (including recurring events)
  */
-export function getEventsForDate<T extends { date: string; recurrence?: any; parentEventId?: string | null; id: string }>(
+export function getEventsForDate<T extends { date: string; recurrence?: any; parentEventId?: string | null; id: string; excludedDates?: string[] }>(
   events: T[],
   date: Date
 ): T[] {
@@ -251,6 +253,7 @@ export function getEventsForDate<T extends { date: string; recurrence?: any; par
 
     // Direct match
     if (event.date === dateStr) {
+      if (event.recurrence && event.excludedDates?.includes(dateStr)) continue
       result.push(event)
       continue
     }
@@ -258,6 +261,7 @@ export function getEventsForDate<T extends { date: string; recurrence?: any; par
     // Check recurrence
     if (event.recurrence) {
       if (matchesRecurrence(dateStr, event.date, event.recurrence)) {
+        if (event.excludedDates?.includes(dateStr)) continue
         // Create a virtual instance for this date
         result.push({
           ...event,
@@ -269,4 +273,42 @@ export function getEventsForDate<T extends { date: string; recurrence?: any; par
   }
 
   return result
+}
+
+/**
+ * Expand recurring events into occurrence rows for a date range [fromStr, toStr] (ISO dates).
+ * Omits parent rows that only exist as series anchors; each occurrence uses the parent row fields with instance date.
+ */
+export function expandEventsForDateRange<
+  T extends {
+    id: string
+    date: string
+    recurrence?: RecurrencePattern | null
+    excludedDates?: string[]
+    parentEventId?: string | null
+  },
+>(events: T[], fromStr: string, toStr: string): T[] {
+  const out: T[] = []
+  for (const event of events) {
+    if (event.parentEventId) continue
+    if (!event.recurrence) {
+      if (event.date >= fromStr && event.date <= toStr) out.push(event)
+      continue
+    }
+    const dates = generateRecurringDates(event.date, event.recurrence, toStr)
+    for (const d of dates) {
+      if (d < fromStr) continue
+      if (event.excludedDates?.includes(d)) continue
+      if (d === event.date) {
+        out.push(event)
+      } else {
+        out.push({
+          ...event,
+          date: d,
+          parentEventId: event.id,
+        } as T)
+      }
+    }
+  }
+  return out
 }

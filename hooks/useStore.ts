@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
-import type { Task, JournalEntry, Event, Subtask, Project } from '@/types'
+import type { Task, JournalEntry, Event, Subtask, Project, RecurrencePattern } from '@/types'
 import { formatDate } from '@/lib/utils'
 import { useAuth } from '@/components/AuthProvider'
 import * as sync from '@/lib/supabase/sync'
@@ -19,7 +19,7 @@ interface StoreContextType {
   projects: Project[]
   addTask: (text: string, subtasks?: Subtask[], dueDate?: string, recurrence?: any) => string
   updateTask: (id: string, updates: Partial<Task>, instanceDate?: string) => void
-  deleteTask: (id: string) => void
+  deleteTask: (id: string, singleInstanceDate?: string) => void
   reorderTasks: (newOrder: Task[]) => void
   clearCompleted: () => void
   saveJournalEntry: (date: string, content: string) => void
@@ -31,9 +31,9 @@ interface StoreContextType {
   saveProjectContent: (id: string, content: string) => void
   getProject: (id: string) => Project | null
   getAllProjects: () => Project[]
-  addEvent: (text: string, date: string, hour: number, sourceTaskId?: string, endHour?: number, location?: string, minutes?: number, endMinutes?: number, allDay?: boolean) => string
+  addEvent: (text: string, date: string, hour: number, sourceTaskId?: string, endHour?: number, location?: string, minutes?: number, endMinutes?: number, allDay?: boolean, recurrence?: RecurrencePattern | null) => string
   updateEvent: (id: string, updates: Partial<Event>) => void
-  deleteEvent: (id: string) => void
+  deleteEvent: (id: string, singleInstanceDate?: string) => void
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined)
@@ -484,14 +484,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [tasks, saveTasks, user])
 
-  const deleteTask = useCallback((id: string) => {
-    saveTasks(tasks.filter(task => task.id !== id))
-    
-    // Also delete from Supabase
-    if (user && !isSyncingRef.current) {
-      sync.deleteTaskFromSupabase(user.id, id).catch(console.error)
-    }
-  }, [tasks, saveTasks, user])
+  const deleteTask = useCallback(
+    (id: string, singleInstanceDate?: string) => {
+      const task = tasks.find((t) => t.id === id)
+      if (task?.recurrence && singleInstanceDate) {
+        const excluded = [...new Set([...(task.excludedDates ?? []), singleInstanceDate])]
+        const updatedTasks = tasks.map((t) =>
+          t.id === id
+            ? { ...t, excludedDates: excluded, updatedAt: new Date().toISOString() }
+            : t
+        )
+        saveTasks(updatedTasks)
+        const updatedTask = updatedTasks.find((t) => t.id === id)
+        if (user && updatedTask && !isSyncingRef.current) {
+          sync.upsertTaskToSupabase(user.id, updatedTask).catch(console.error)
+        }
+        return
+      }
+
+      saveTasks(tasks.filter((task) => task.id !== id))
+
+      if (user && !isSyncingRef.current) {
+        sync.deleteTaskFromSupabase(user.id, id).catch(console.error)
+      }
+    },
+    [tasks, saveTasks, user]
+  )
 
   const reorderTasks = useCallback((newOrder: Task[]) => {
     const reordered = newOrder.map((task, index) => ({ ...task, order: index, updatedAt: new Date().toISOString() }))
@@ -632,7 +650,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     location?: string,
     minutes?: number,
     endMinutes?: number,
-    allDay?: boolean
+    allDay?: boolean,
+    recurrence?: RecurrencePattern | null
   ): string => {
     const newEvent: Event = {
       id: crypto.randomUUID(),
@@ -647,6 +666,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       sourceTaskId,
+      recurrence: recurrence ?? null,
     }
     saveEvents([...events, newEvent])
     
@@ -673,14 +693,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [events, saveEvents, user])
 
-  const deleteEvent = useCallback((id: string) => {
-    saveEvents(events.filter(event => event.id !== id))
-    
-    // Also delete from Supabase
-    if (user && !isSyncingRef.current) {
-      sync.deleteEventFromSupabase(user.id, id).catch(console.error)
-    }
-  }, [events, saveEvents, user])
+  const deleteEvent = useCallback(
+    (id: string, singleInstanceDate?: string) => {
+      const event = events.find((e) => e.id === id)
+      if (event?.recurrence && singleInstanceDate) {
+        const excluded = [...new Set([...(event.excludedDates ?? []), singleInstanceDate])]
+        const updatedEvents = events.map((e) =>
+          e.id === id
+            ? { ...e, excludedDates: excluded, updatedAt: new Date().toISOString() }
+            : e
+        )
+        saveEvents(updatedEvents)
+        const updatedEvent = updatedEvents.find((e) => e.id === id)
+        if (user && updatedEvent && !isSyncingRef.current) {
+          sync.upsertEventToSupabase(user.id, updatedEvent).catch(console.error)
+        }
+        return
+      }
+
+      saveEvents(events.filter((ev) => ev.id !== id))
+
+      if (user && !isSyncingRef.current) {
+        sync.deleteEventFromSupabase(user.id, id).catch(console.error)
+      }
+    },
+    [events, saveEvents, user]
+  )
 
   const value: StoreContextType = {
     tasks,

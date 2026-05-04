@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { format } from 'date-fns'
-import { Plus, Edit2, Trash2, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, Repeat } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import { formatDate, getEventsForDate } from '@/lib/utils'
-import type { Event } from '@/types'
+import type { Event, RecurrencePattern } from '@/types'
+import { CalendarPopup } from './CalendarPopup'
+import { RecurringDeleteModal } from './RecurringDeleteModal'
 
 interface DailyEventsProps {
   date: Date
@@ -14,16 +15,24 @@ interface DailyEventsProps {
 export function DailyEvents({ date }: DailyEventsProps) {
   const store = useStore()
   const dateStr = formatDate(date)
-  const isToday = formatDate(new Date()) === dateStr
   const [showForm, setShowForm] = useState(false)
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
-  const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
-  const [formData, setFormData] = useState({
+  const [eventToDelete, setEventToDelete] = useState<Event | null>(null)
+  const [showRecurrencePopup, setShowRecurrencePopup] = useState(false)
+  const [formData, setFormData] = useState<{
+    title: string
+    startHour: number
+    endHour: number
+    location: string
+    allDay: boolean
+    recurrence: RecurrencePattern | null
+  }>({
     title: '',
     startHour: 9,
     endHour: 10,
     location: '',
     allDay: false,
+    recurrence: null,
   })
 
   // Get all events for this date (including recurring)
@@ -65,7 +74,8 @@ export function DailyEvents({ date }: DailyEventsProps) {
       formData.location.trim() || undefined,
       undefined, // minutes
       undefined, // endMinutes
-      formData.allDay
+      formData.allDay,
+      formData.recurrence
     )
     
     // Reset form
@@ -75,18 +85,24 @@ export function DailyEvents({ date }: DailyEventsProps) {
       endHour: 10,
       location: '',
       allDay: false,
+      recurrence: null,
     })
     setShowForm(false)
   }
 
   const handleEditEvent = (event: Event) => {
-    setEditingEventId(event.id)
+    const seriesId = event.parentEventId || event.id
+    const series = store.events.find((e) => e.id === seriesId)
+    setEditingEventId(seriesId)
     setFormData({
-      title: event.text,
-      startHour: event.hour,
-      endHour: event.endHour || event.hour + 1,
-      location: event.location || '',
-      allDay: event.allDay || false,
+      title: series?.text ?? event.text,
+      startHour: series?.hour ?? event.hour,
+      endHour: series
+        ? (series.endHour ?? series.hour + 1)
+        : (event.endHour || event.hour + 1),
+      location: series?.location || event.location || '',
+      allDay: series?.allDay ?? event.allDay ?? false,
+      recurrence: series?.recurrence ?? null,
     })
     setShowForm(false)
   }
@@ -100,6 +116,7 @@ export function DailyEvents({ date }: DailyEventsProps) {
       endHour: formData.allDay ? undefined : formData.endHour,
       location: formData.location.trim() || undefined,
       allDay: formData.allDay,
+      recurrence: formData.recurrence,
     })
     
     // Reset form
@@ -110,20 +127,12 @@ export function DailyEvents({ date }: DailyEventsProps) {
       endHour: 10,
       location: '',
       allDay: false,
+      recurrence: null,
     })
   }
 
-  const handleDeleteEvent = (eventId: string) => {
-    setDeletingEventId(eventId)
-  }
-
-  const confirmDeleteEvent = (eventId: string) => {
-    store.deleteEvent(eventId)
-    setDeletingEventId(null)
-  }
-
-  const cancelDelete = () => {
-    setDeletingEventId(null)
+  const handleRequestDeleteEvent = (event: Event) => {
+    setEventToDelete(event)
   }
 
   const handleCancelEdit = () => {
@@ -134,6 +143,7 @@ export function DailyEvents({ date }: DailyEventsProps) {
       endHour: 10,
       location: '',
       allDay: false,
+      recurrence: null,
     })
   }
 
@@ -335,6 +345,49 @@ export function DailyEvents({ date }: DailyEventsProps) {
               />
             </div>
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setShowRecurrencePopup(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  border: '1px solid #E8EFE6',
+                  backgroundColor: '#FFFFFF',
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: '12px',
+                  color: '#006747',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                }}
+              >
+                <Repeat size={14} />
+                {formData.recurrence ? 'Edit repeat' : 'Repeat'}
+              </button>
+              {formData.recurrence && (
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, recurrence: null })}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: 'none',
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: '11px',
+                    color: '#5A7A5E',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Clear repeat
+                </button>
+              )}
+            </div>
+
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button
                 onClick={editingEventId ? handleCancelEdit : () => setShowForm(false)}
@@ -411,9 +464,12 @@ export function DailyEvents({ date }: DailyEventsProps) {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {events.map((event) => (
+          {events.map((event) => {
+            const series = store.events.find((e) => e.id === (event.parentEventId || event.id))
+            const isSeriesRecurring = !!series?.recurrence
+            return (
             <div
-              key={event.id}
+              key={`${event.parentEventId || event.id}-${event.date}`}
               className="flex items-start gap-3"
               style={{
                 padding: '10px 12px',
@@ -423,16 +479,12 @@ export function DailyEvents({ date }: DailyEventsProps) {
                 position: 'relative',
               }}
               onMouseEnter={(e) => {
-                if (deletingEventId !== event.id) {
-                  const buttons = e.currentTarget.querySelector('[data-event-buttons]') as HTMLElement
-                  if (buttons) buttons.style.opacity = '1'
-                }
+                const buttons = e.currentTarget.querySelector('[data-event-buttons]') as HTMLElement
+                if (buttons) buttons.style.opacity = '1'
               }}
               onMouseLeave={(e) => {
-                if (deletingEventId !== event.id) {
-                  const buttons = e.currentTarget.querySelector('[data-event-buttons]') as HTMLElement
-                  if (buttons) buttons.style.opacity = '0'
-                }
+                const buttons = e.currentTarget.querySelector('[data-event-buttons]') as HTMLElement
+                if (buttons) buttons.style.opacity = '0'
               }}
             >
               <div className="flex-1 min-w-0">
@@ -448,6 +500,19 @@ export function DailyEvents({ date }: DailyEventsProps) {
                 >
                   {event.text}
                 </div>
+                {isSeriesRecurring && (
+                  <div
+                    style={{
+                      fontFamily: "'DM Sans', sans-serif",
+                      fontSize: '10px',
+                      color: '#006747',
+                      fontWeight: 600,
+                      marginBottom: '4px',
+                    }}
+                  >
+                    Repeats
+                  </div>
+                )}
                 <div
                   style={{
                     fontFamily: "'DM Sans', sans-serif",
@@ -475,63 +540,6 @@ export function DailyEvents({ date }: DailyEventsProps) {
                   </div>
                 )}
               </div>
-              {deletingEventId === event.id ? (
-                <div 
-                  data-event-buttons
-                  style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    gap: '8px', 
-                    flexShrink: 0,
-                    alignItems: 'flex-end',
-                    opacity: 1,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "'DM Sans', sans-serif",
-                      fontSize: '11px',
-                      color: '#5A7A5E',
-                    }}
-                  >
-                    Delete event?
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => confirmDeleteEvent(event.id)}
-                      style={{
-                        padding: '4px 12px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        backgroundColor: '#006747',
-                        color: '#FFFFFF',
-                        fontFamily: "'DM Sans', sans-serif",
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      onClick={cancelDelete}
-                      style={{
-                        padding: '4px 12px',
-                        borderRadius: '6px',
-                        border: '1px solid #E8EFE6',
-                        backgroundColor: '#FFFFFF',
-                        color: '#1A2E1A',
-                        fontFamily: "'DM Sans', sans-serif",
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      No
-                    </button>
-                  </div>
-                </div>
-              ) : (
                 <div 
                   data-event-buttons
                   style={{ 
@@ -560,7 +568,7 @@ export function DailyEvents({ date }: DailyEventsProps) {
                     <Edit2 size={14} />
                   </button>
                   <button
-                    onClick={() => handleDeleteEvent(event.id)}
+                    onClick={() => handleRequestDeleteEvent(event)}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -577,11 +585,58 @@ export function DailyEvents({ date }: DailyEventsProps) {
                     <Trash2 size={14} />
                   </button>
                 </div>
-              )}
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
+      {showRecurrencePopup && (
+        <CalendarPopup
+          title="Repeat"
+          onSelectDate={(_d, recurrence) => {
+            setFormData((prev) => ({ ...prev, recurrence: recurrence ?? null }))
+            setShowRecurrencePopup(false)
+          }}
+          onClose={() => setShowRecurrencePopup(false)}
+          allowRecurrence={true}
+          initialDate={dateStr}
+          initialRecurrence={formData.recurrence}
+          showNoDateOption={false}
+        />
+      )}
+
+      <RecurringDeleteModal
+        open={!!eventToDelete}
+        variant="event"
+        isRecurring={
+          !!(
+            eventToDelete &&
+            store.events.find((e) => e.id === (eventToDelete.parentEventId || eventToDelete.id))?.recurrence
+          )
+        }
+        onCancel={() => setEventToDelete(null)}
+        onDeleteSeries={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid)
+          }
+          setEventToDelete(null)
+        }}
+        onDeleteSingle={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid, eventToDelete.date)
+          }
+          setEventToDelete(null)
+        }}
+        onDeletePlain={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid)
+          }
+          setEventToDelete(null)
+        }}
+      />
     </div>
   )
 }

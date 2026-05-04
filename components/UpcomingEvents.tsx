@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { format, addDays, addMonths } from 'date-fns'
-import { Plus, X, Edit2, Trash2, Calendar as CalendarIcon, ChevronUp, ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { Plus, X, Edit2, Trash2, Calendar as CalendarIcon, ChevronUp, ChevronDown, SlidersHorizontal, Repeat } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
-import { formatDate, isEventEnded } from '@/lib/utils'
+import { formatDate, isEventEnded, expandEventsForDateRange } from '@/lib/utils'
 import { CalendarPopup } from './CalendarPopup'
-import type { ViewMode, Event } from '@/types'
+import { RecurringDeleteModal } from './RecurringDeleteModal'
+import type { ViewMode, Event, RecurrencePattern } from '@/types'
 
 interface UpcomingEventsProps {
   navigate: (view: ViewMode, date?: Date) => void
@@ -17,15 +18,25 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
   const todayStr = formatDate(new Date())
   const [showForm, setShowForm] = useState(false)
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
-  const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
+  const [eventToDelete, setEventToDelete] = useState<Event | null>(null)
   const [showCalendar, setShowCalendar] = useState(false)
-  const [formData, setFormData] = useState({
+  const [showRecurrencePopup, setShowRecurrencePopup] = useState(false)
+  const [formData, setFormData] = useState<{
+    title: string
+    date: string
+    startHour: number
+    endHour: number
+    location: string
+    allDay: boolean
+    recurrence: RecurrencePattern | null
+  }>({
     title: '',
     date: formatDate(new Date()),
     startHour: 9,
     endHour: 10,
     location: '',
     allDay: false,
+    recurrence: null,
   })
   const [startTimeInput, setStartTimeInput] = useState('9')
   const [endTimeInput, setEndTimeInput] = useState('10')
@@ -58,22 +69,21 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
   
   const endDateStr = formatDate(getEndDate())
   
-  // Get upcoming events (from today onwards, within timeframe)
-  const upcomingEvents = store.events
-    .filter((event) => {
-      // Filter out ended events
-      if (isEventEnded(event)) return false
-      // Include today and future dates within the timeframe
-      return event.date >= todayStr && event.date <= endDateStr
-    })
-    .sort((a, b) => {
-      // Sort by date first, then by hour
-      if (a.date !== b.date) {
-        return a.date.localeCompare(b.date)
-      }
-      return a.hour - b.hour
-    })
-    .slice(0, 5) // Show up to 5 upcoming events
+  const upcomingEvents = useMemo(() => {
+    const expanded = expandEventsForDateRange(store.events, todayStr, endDateStr)
+    return expanded
+      .filter((event) => {
+        if (isEventEnded(event)) return false
+        return event.date >= todayStr && event.date <= endDateStr
+      })
+      .sort((a, b) => {
+        if (a.date !== b.date) {
+          return a.date.localeCompare(b.date)
+        }
+        return a.hour - b.hour
+      })
+      .slice(0, 5)
+  }, [store.events, todayStr, endDateStr])
 
   const handleAddEvent = () => {
     if (!formData.title.trim()) return
@@ -87,7 +97,8 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
       formData.location.trim() || undefined,
       startMinutes,
       endMinutes,
-      formData.allDay
+      formData.allDay,
+      formData.recurrence
     )
     
     // Reset form
@@ -98,6 +109,7 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
       endHour: 10,
       location: '',
       allDay: false,
+      recurrence: null,
     })
     setStartTimeInput('9')
     setEndTimeInput('10')
@@ -107,19 +119,24 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
   }
 
   const handleEditEvent = (event: Event) => {
-    setEditingEventId(event.id)
+    const seriesId = event.parentEventId || event.id
+    const series = store.events.find((e) => e.id === seriesId)
+    setEditingEventId(seriesId)
     setFormData({
-      title: event.text,
-      date: event.date,
-      startHour: event.hour,
-      endHour: event.endHour || event.hour + 1,
-      location: event.location || '',
-      allDay: event.allDay || false,
+      title: series?.text ?? event.text,
+      date: series?.date ?? event.date,
+      startHour: series?.hour ?? event.hour,
+      endHour: series
+        ? (series.endHour ?? series.hour + 1)
+        : (event.endHour || event.hour + 1),
+      location: series?.location || event.location || '',
+      allDay: series?.allDay ?? event.allDay ?? false,
+      recurrence: series?.recurrence ?? null,
     })
-    setStartMinutes(event.minutes ?? 0)
-    setEndMinutes(event.endMinutes ?? 0)
-    setStartTimeInput(formatHourDisplay(event.hour))
-    setEndTimeInput(formatHourDisplay(event.endHour || event.hour + 1))
+    setStartMinutes(series?.minutes ?? event.minutes ?? 0)
+    setEndMinutes(series?.endMinutes ?? event.endMinutes ?? 0)
+    setStartTimeInput(formatHourDisplay(series?.hour ?? event.hour))
+    setEndTimeInput(formatHourDisplay((series?.endHour ?? event.endHour) || event.hour + 1))
     setShowForm(false)
   }
 
@@ -135,6 +152,7 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
       endMinutes: formData.allDay ? undefined : endMinutes,
       location: formData.location.trim() || undefined,
       allDay: formData.allDay,
+      recurrence: formData.recurrence,
     })
     
     // Reset form
@@ -146,20 +164,12 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
       endHour: 10,
       location: '',
       allDay: false,
+      recurrence: null,
     })
   }
 
-  const handleDeleteEvent = (eventId: string) => {
-    setDeletingEventId(eventId)
-  }
-
-  const confirmDeleteEvent = (eventId: string) => {
-    store.deleteEvent(eventId)
-    setDeletingEventId(null)
-  }
-
-  const cancelDelete = () => {
-    setDeletingEventId(null)
+  const handleRequestDeleteEvent = (event: Event) => {
+    setEventToDelete(event)
   }
 
   const handleCancelEdit = () => {
@@ -171,6 +181,7 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
       endHour: 10,
       location: '',
       allDay: false,
+      recurrence: null,
     })
   }
 
@@ -1142,6 +1153,49 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
                 />
               </div>
 
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowRecurrencePopup(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #E8EFE6',
+                    backgroundColor: '#FFFFFF',
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: '12px',
+                    color: '#006747',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Repeat size={14} />
+                  {formData.recurrence ? 'Edit repeat' : 'Repeat'}
+                </button>
+                {formData.recurrence && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, recurrence: null })}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: 'none',
+                      fontFamily: "'DM Sans', sans-serif",
+                      fontSize: '11px',
+                      color: '#5A7A5E',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    Clear repeat
+                  </button>
+                )}
+              </div>
+
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button
                   onClick={editingEventId ? handleCancelEdit : () => setShowForm(false)}
@@ -1195,12 +1249,13 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {upcomingEvents.map((event) => {
-              // Compare date strings directly (both should be in YYYY-MM-DD format)
               const isToday = event.date === todayStr
+              const series = store.events.find((e) => e.id === (event.parentEventId || event.id))
+              const isSeriesRecurring = !!series?.recurrence
 
               return (
                 <div
-                  key={event.id}
+                  key={`${event.parentEventId || event.id}-${event.date}`}
                   style={{
                     padding: '10px 12px',
                     borderRadius: '10px',
@@ -1212,16 +1267,12 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
                     position: 'relative',
                   }}
                   onMouseEnter={(e) => {
-                    if (deletingEventId !== event.id) {
-                      const buttons = e.currentTarget.querySelector('[data-event-buttons]') as HTMLElement
-                      if (buttons) buttons.style.opacity = '1'
-                    }
+                    const buttons = e.currentTarget.querySelector('[data-event-buttons]') as HTMLElement
+                    if (buttons) buttons.style.opacity = '1'
                   }}
                   onMouseLeave={(e) => {
-                    if (deletingEventId !== event.id) {
-                      const buttons = e.currentTarget.querySelector('[data-event-buttons]') as HTMLElement
-                      if (buttons) buttons.style.opacity = '0'
-                    }
+                    const buttons = e.currentTarget.querySelector('[data-event-buttons]') as HTMLElement
+                    if (buttons) buttons.style.opacity = '0'
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -1237,6 +1288,19 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
                     >
                       {event.text}
                     </div>
+                    {isSeriesRecurring && (
+                      <div
+                        style={{
+                          fontFamily: "'DM Sans', sans-serif",
+                          fontSize: '10px',
+                          color: '#006747',
+                          fontWeight: 600,
+                          marginBottom: '4px',
+                        }}
+                      >
+                        Repeats
+                      </div>
+                    )}
                     <div
                       style={{
                         fontFamily: "'DM Sans', sans-serif",
@@ -1265,7 +1329,6 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
                           {event.allDay && <span style={{ fontStyle: 'italic' }}>— All Day</span>}
                         </span>
                       ) : (() => {
-                          // Parse date string (YYYY-MM-DD) to avoid timezone issues
                           const [year, month, day] = event.date.split('-').map(Number)
                           const eventDate = new Date(year, month - 1, day)
                           const dateText = event.allDay 
@@ -1305,63 +1368,6 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
                       </div>
                     )}
                   </div>
-                  {deletingEventId === event.id ? (
-                    <div 
-                      data-event-buttons
-                      style={{ 
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        gap: '8px', 
-                        flexShrink: 0,
-                        alignItems: 'flex-end',
-                        opacity: 1,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontFamily: "'DM Sans', sans-serif",
-                          fontSize: '11px',
-                          color: '#5A7A5E',
-                        }}
-                      >
-                        Delete event?
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={() => confirmDeleteEvent(event.id)}
-                          style={{
-                            padding: '4px 12px',
-                            borderRadius: '6px',
-                            border: 'none',
-                            backgroundColor: '#006747',
-                            color: '#FFFFFF',
-                            fontFamily: "'DM Sans', sans-serif",
-                            fontSize: '11px',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Yes
-                        </button>
-                        <button
-                          onClick={cancelDelete}
-                          style={{
-                            padding: '4px 12px',
-                            borderRadius: '6px',
-                            border: '1px solid #E8EFE6',
-                            backgroundColor: '#FFFFFF',
-                            color: '#1A2E1A',
-                            fontFamily: "'DM Sans', sans-serif",
-                            fontSize: '11px',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          No
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
                     <div 
                       data-event-buttons
                       style={{ 
@@ -1390,7 +1396,7 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
                         <Edit2 size={14} />
                       </button>
                       <button
-                        onClick={() => handleDeleteEvent(event.id)}
+                        onClick={() => handleRequestDeleteEvent(event)}
                         style={{
                           background: 'none',
                           border: 'none',
@@ -1407,7 +1413,6 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
                         <Trash2 size={14} />
                       </button>
                     </div>
-                  )}
                 </div>
               )
             })}
@@ -1429,6 +1434,54 @@ export function UpcomingEvents({ navigate }: UpcomingEventsProps) {
           onClose={() => setShowCalendar(false)}
         />
       )}
+
+      {showRecurrencePopup && (
+        <CalendarPopup
+          title="Repeat"
+          onSelectDate={(_d, recurrence) => {
+            setFormData((prev) => ({ ...prev, recurrence: recurrence ?? null }))
+            setShowRecurrencePopup(false)
+          }}
+          onClose={() => setShowRecurrencePopup(false)}
+          allowRecurrence={true}
+          initialDate={formData.date}
+          initialRecurrence={formData.recurrence}
+          showNoDateOption={false}
+        />
+      )}
+
+      <RecurringDeleteModal
+        open={!!eventToDelete}
+        variant="event"
+        isRecurring={
+          !!(
+            eventToDelete &&
+            store.events.find((e) => e.id === (eventToDelete.parentEventId || eventToDelete.id))?.recurrence
+          )
+        }
+        onCancel={() => setEventToDelete(null)}
+        onDeleteSeries={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid)
+          }
+          setEventToDelete(null)
+        }}
+        onDeleteSingle={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid, eventToDelete.date)
+          }
+          setEventToDelete(null)
+        }}
+        onDeletePlain={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid)
+          }
+          setEventToDelete(null)
+        }}
+      />
 
       {/* Filter Popup */}
       {showFilterPopup && (

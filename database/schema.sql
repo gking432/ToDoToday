@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   subtasks JSONB,
   recurrence JSONB,
   parent_task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,
-  completed_dates TEXT[] DEFAULT '{}'
+  completed_dates TEXT[] DEFAULT '{}',
+  excluded_dates TEXT[] DEFAULT '{}'
 );
 
 CREATE INDEX IF NOT EXISTS tasks_user_id_idx ON tasks(user_id);
@@ -42,7 +43,8 @@ CREATE TABLE IF NOT EXISTS events (
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   source_task_id UUID,
   recurrence JSONB,
-  parent_event_id UUID REFERENCES events(id) ON DELETE CASCADE
+  parent_event_id UUID REFERENCES events(id) ON DELETE CASCADE,
+  excluded_dates TEXT[] DEFAULT '{}'
 );
 
 CREATE INDEX IF NOT EXISTS events_user_id_idx ON events(user_id);

@@ -8,6 +8,7 @@ import { DueItemsSummary } from './DueItemsSummary'
 import { useStore } from '@/hooks/useStore'
 import { formatDate, isEventEnded, getEventsForDate } from '@/lib/utils'
 import type { ViewMode, Event } from '@/types'
+import { RecurringDeleteModal } from './RecurringDeleteModal'
 
 interface DailyViewProps {
   date: Date
@@ -24,6 +25,7 @@ export function DailyView({ date, navigate, isExpanded = false, onExpand, onColl
   const [resizingEventId, setResizingEventId] = useState<string | null>(null)
   const [resizeTargetHour, setResizeTargetHour] = useState<number | null>(null)
   const [creatingEventForHour, setCreatingEventForHour] = useState<number | null>(null)
+  const [eventToDelete, setEventToDelete] = useState<Event | null>(null)
   const [eventFormData, setEventFormData] = useState({
     title: '',
     endHour: 10,
@@ -194,8 +196,8 @@ export function DailyView({ date, navigate, isExpanded = false, onExpand, onColl
     setDragOverSlot(null)
   }
 
-  const removeEventFromSlot = (eventId: string) => {
-    store.deleteEvent(eventId)
+  const removeEventFromSlot = (event: Event) => {
+    setEventToDelete(event)
   }
 
   const formatHour = (hour: number, minutes: number = 0) => {
@@ -596,7 +598,7 @@ export function DailyView({ date, navigate, isExpanded = false, onExpand, onColl
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          removeEventFromSlot(event.id)
+                          removeEventFromSlot(event)
                         }}
                         style={{
                           background: 'none',
@@ -935,7 +937,7 @@ export function DailyView({ date, navigate, isExpanded = false, onExpand, onColl
                               <button
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      removeEventFromSlot(event.id)
+                                      removeEventFromSlot(event)
                                     }}
                                 style={{
                                   background: 'none',
@@ -986,6 +988,38 @@ export function DailyView({ date, navigate, isExpanded = false, onExpand, onColl
           </div>
         )}
       </div>
+      <RecurringDeleteModal
+        open={!!eventToDelete}
+        variant="event"
+        isRecurring={
+          !!(
+            eventToDelete &&
+            store.events.find((e) => e.id === (eventToDelete.parentEventId || eventToDelete.id))?.recurrence
+          )
+        }
+        onCancel={() => setEventToDelete(null)}
+        onDeleteSeries={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid)
+          }
+          setEventToDelete(null)
+        }}
+        onDeleteSingle={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid, eventToDelete.date)
+          }
+          setEventToDelete(null)
+        }}
+        onDeletePlain={() => {
+          if (eventToDelete) {
+            const pid = eventToDelete.parentEventId || eventToDelete.id
+            store.deleteEvent(pid)
+          }
+          setEventToDelete(null)
+        }}
+      />
     </div>
   )
 }
