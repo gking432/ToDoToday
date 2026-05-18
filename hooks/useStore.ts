@@ -85,7 +85,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<Event[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoadingFromSupabase, setIsLoadingFromSupabase] = useState(false)
-  const isInitialLoadRef = useRef(true)
+  const activeRemoteLoadSeqRef = useRef(0)
   const isSyncingRef = useRef(false)
 
   // Load from localStorage on mount
@@ -109,54 +109,64 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setProjects(getStoredProjects())
   }, [])
 
-  // Load from Supabase when user is authenticated
+  // Load from Supabase whenever the signed-in user id is available (including after sign-out → sign-in).
+  // Previously a one-shot ref skipped all later logins, so each device only merged local data and drifted from the server.
   useEffect(() => {
-    if (!user || !isInitialLoadRef.current) return
-    isInitialLoadRef.current = false
-    
+    const userId = user?.id
+    if (!userId) return
+
+    const loadSeq = ++activeRemoteLoadSeqRef.current
+
     const loadFromSupabase = async () => {
-      if (isSyncingRef.current) return
       isSyncingRef.current = true
       setIsLoadingFromSupabase(true)
-      
+
       try {
-        const userId = user.id
-        
-        // Fetch all data from Supabase
         const [supabaseTasks, supabaseEvents, supabaseJournal, supabaseProjects] = await Promise.all([
-          sync.fetchTasksFromSupabase(userId).catch(() => []),
-          sync.fetchEventsFromSupabase(userId).catch(() => []),
-          sync.fetchJournalFromSupabase(userId).catch(() => ({})),
-          sync.fetchProjectsFromSupabase(userId).catch(() => []),
+          sync.fetchTasksFromSupabase(userId).catch((err) => {
+            console.error('fetchTasksFromSupabase:', err)
+            return [] as Task[]
+          }),
+          sync.fetchEventsFromSupabase(userId).catch((err) => {
+            console.error('fetchEventsFromSupabase:', err)
+            return [] as Event[]
+          }),
+          sync.fetchJournalFromSupabase(userId).catch((err) => {
+            console.error('fetchJournalFromSupabase:', err)
+            return {}
+          }),
+          sync.fetchProjectsFromSupabase(userId).catch((err) => {
+            console.error('fetchProjectsFromSupabase:', err)
+            return [] as Project[]
+          }),
         ])
-        
-        // Merge with localStorage data (local takes precedence if timestamps are equal)
+
+        if (activeRemoteLoadSeqRef.current !== loadSeq) return
+
         const localTasks = getStoredTasks()
         const localEvents = getStoredEvents()
         const localJournal = getStoredJournal()
         const localProjects = getStoredProjects()
-        
-        // Merge tasks: use most recent updatedAt
+
         const mergedTasks = mergeByTimestamp(localTasks, supabaseTasks, 'updatedAt')
         const mergedEvents = mergeByTimestamp(localEvents, supabaseEvents, 'updatedAt')
         const mergedJournal = mergeJournalEntries(localJournal, supabaseJournal)
         const mergedProjects = mergeByTimestamp(localProjects, supabaseProjects, 'updatedAt')
-        
-        // Update state
+
+        if (activeRemoteLoadSeqRef.current !== loadSeq) return
+
         setTasks(mergedTasks)
         setEvents(mergedEvents)
         setJournal(mergedJournal)
         setProjects(mergedProjects)
-        
-        // Save merged data to localStorage
+
         if (typeof window !== 'undefined') {
           localStorage.setItem(TASKS_KEY, JSON.stringify(mergedTasks))
           localStorage.setItem(EVENTS_KEY, JSON.stringify(mergedEvents))
           localStorage.setItem(JOURNAL_KEY, JSON.stringify(mergedJournal))
           localStorage.setItem(PROJECTS_KEY, JSON.stringify(mergedProjects))
         }
-        
-        // Sync merged data back to Supabase
+
         await Promise.all([
           sync.syncTasksToSupabase(userId, mergedTasks).catch(console.error),
           sync.syncEventsToSupabase(userId, mergedEvents).catch(console.error),
@@ -166,13 +176,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error('Error loading from Supabase:', error)
       } finally {
-        setIsLoadingFromSupabase(false)
-        isSyncingRef.current = false
+        if (activeRemoteLoadSeqRef.current === loadSeq) {
+          setIsLoadingFromSupabase(false)
+          isSyncingRef.current = false
+        }
       }
     }
-    
+
     loadFromSupabase()
-  }, [user])
+
+    return () => {
+      activeRemoteLoadSeqRef.current++
+    }
+  }, [user?.id])
 
   // Real-time sync handlers
   const handleTaskChange = useCallback((task: Task) => {
