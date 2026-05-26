@@ -7,10 +7,7 @@ import { useAuth } from '@/components/AuthProvider'
 import * as sync from '@/lib/supabase/sync'
 import { useRealtimeSync } from './useRealtimeSync'
 
-const TASKS_KEY = 'todoToday_tasks'
-const JOURNAL_KEY = 'todoToday_journal'
-const EVENTS_KEY = 'todoToday_events'
-const PROJECTS_KEY = 'todoToday_projects'
+import { TASKS_KEY, JOURNAL_KEY, EVENTS_KEY, PROJECTS_KEY } from '@/lib/storage-keys'
 
 interface StoreContextType {
   tasks: Task[]
@@ -109,8 +106,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setProjects(getStoredProjects())
   }, [])
 
-  // Load from Supabase whenever the signed-in user id is available (including after sign-out → sign-in).
-  // Previously a one-shot ref skipped all later logins, so each device only merged local data and drifted from the server.
+  // On sign-in, Supabase is the source of truth.
+  // We replace local state with the server snapshot rather than merging,
+  // because a local-first merge resurrects items deleted on other devices.
+  // Individual edits still push to Supabase via the per-operation upserts below,
+  // and live cross-device updates come through useRealtimeSync.
   useEffect(() => {
     const userId = user?.id
     if (!userId) return
@@ -143,36 +143,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         if (activeRemoteLoadSeqRef.current !== loadSeq) return
 
-        const localTasks = getStoredTasks()
-        const localEvents = getStoredEvents()
-        const localJournal = getStoredJournal()
-        const localProjects = getStoredProjects()
-
-        const mergedTasks = mergeByTimestamp(localTasks, supabaseTasks, 'updatedAt')
-        const mergedEvents = mergeByTimestamp(localEvents, supabaseEvents, 'updatedAt')
-        const mergedJournal = mergeJournalEntries(localJournal, supabaseJournal)
-        const mergedProjects = mergeByTimestamp(localProjects, supabaseProjects, 'updatedAt')
-
-        if (activeRemoteLoadSeqRef.current !== loadSeq) return
-
-        setTasks(mergedTasks)
-        setEvents(mergedEvents)
-        setJournal(mergedJournal)
-        setProjects(mergedProjects)
+        setTasks(supabaseTasks)
+        setEvents(supabaseEvents)
+        setJournal(supabaseJournal)
+        setProjects(supabaseProjects)
 
         if (typeof window !== 'undefined') {
-          localStorage.setItem(TASKS_KEY, JSON.stringify(mergedTasks))
-          localStorage.setItem(EVENTS_KEY, JSON.stringify(mergedEvents))
-          localStorage.setItem(JOURNAL_KEY, JSON.stringify(mergedJournal))
-          localStorage.setItem(PROJECTS_KEY, JSON.stringify(mergedProjects))
+          localStorage.setItem(TASKS_KEY, JSON.stringify(supabaseTasks))
+          localStorage.setItem(EVENTS_KEY, JSON.stringify(supabaseEvents))
+          localStorage.setItem(JOURNAL_KEY, JSON.stringify(supabaseJournal))
+          localStorage.setItem(PROJECTS_KEY, JSON.stringify(supabaseProjects))
         }
-
-        await Promise.all([
-          sync.syncTasksToSupabase(userId, mergedTasks).catch(console.error),
-          sync.syncEventsToSupabase(userId, mergedEvents).catch(console.error),
-          sync.syncJournalToSupabase(userId, mergedJournal).catch(console.error),
-          sync.syncProjectsToSupabase(userId, mergedProjects).catch(console.error),
-        ])
       } catch (error) {
         console.error('Error loading from Supabase:', error)
       } finally {
@@ -343,58 +324,49 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     onProjectDelete: handleProjectDelete,
   })
 
-  // Helper function to merge arrays by timestamp
-  const mergeByTimestamp = <T extends { id: string; updatedAt?: string; createdAt: string }>(
-    local: T[],
-    remote: T[],
-    timestampField: 'updatedAt' | 'createdAt'
-  ): T[] => {
-    const merged = new Map<string, T>()
-    
-    // Add all local items
-    local.forEach(item => {
-      merged.set(item.id, item)
-    })
-    
-    // Merge remote items (keep most recent)
-    remote.forEach(remoteItem => {
-      const localItem = merged.get(remoteItem.id)
-      if (!localItem) {
-        merged.set(remoteItem.id, remoteItem)
-      } else {
-        const localTime = new Date(localItem[timestampField] || localItem.createdAt).getTime()
-        const remoteTime = new Date(remoteItem[timestampField] || remoteItem.createdAt).getTime()
-        if (remoteTime > localTime) {
-          merged.set(remoteItem.id, remoteItem)
-        }
-      }
-    })
-    
-    return Array.from(merged.values())
-  }
-
-  // Helper function to merge journal entries
-  const mergeJournalEntries = (
-    local: Record<string, JournalEntry>,
-    remote: Record<string, JournalEntry>
-  ): Record<string, JournalEntry> => {
-    const merged = { ...local }
-    
-    Object.entries(remote).forEach(([date, remoteEntry]) => {
-      const localEntry = merged[date]
-      if (!localEntry) {
-        merged[date] = remoteEntry
-      } else {
-        const localTime = new Date(localEntry.updatedAt).getTime()
-        const remoteTime = new Date(remoteEntry.updatedAt).getTime()
-        if (remoteTime > localTime) {
-          merged[date] = remoteEntry
-        }
-      }
-    })
-    
-    return merged
-  }
+  // One-time recovery helper: overwrite Supabase with this device's local data.
+  // Call from the browser console on the device that has the correct data:
+  //   await window.__todoForcePushFromThisDevice()
+  // Then sign out and back in on the other devices to pull the fresh state.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const userId = user?.id
+    if (!userId) {
+      delete (window as any).__todoForcePushFromThisDevice
+      return
+    }
+    ;(window as any).__todoForcePushFromThisDevice = async () => {
+      const { supabase } = await import('@/lib/supabase/client')
+      console.log('[force-push] wiping remote rows for user', userId)
+      await Promise.all([
+        supabase.from('tasks').delete().eq('user_id', userId),
+        supabase.from('events').delete().eq('user_id', userId),
+        supabase.from('journal_entries').delete().eq('user_id', userId),
+        supabase.from('projects').delete().eq('user_id', userId),
+      ])
+      const localTasks = getStoredTasks()
+      const localEvents = getStoredEvents()
+      const localJournal = getStoredJournal()
+      const localProjects = getStoredProjects()
+      console.log('[force-push] uploading local', {
+        tasks: localTasks.length,
+        events: localEvents.length,
+        journalEntries: Object.keys(localJournal).length,
+        projects: localProjects.length,
+      })
+      await Promise.all([
+        localTasks.length ? sync.syncTasksToSupabase(userId, localTasks) : Promise.resolve(),
+        localEvents.length ? sync.syncEventsToSupabase(userId, localEvents) : Promise.resolve(),
+        Object.keys(localJournal).length ? sync.syncJournalToSupabase(userId, localJournal) : Promise.resolve(),
+        localProjects.length ? sync.syncProjectsToSupabase(userId, localProjects) : Promise.resolve(),
+      ])
+      console.log('[force-push] done. Sign out and back in on other devices.')
+      return 'Force-push complete.'
+    }
+    return () => {
+      delete (window as any).__todoForcePushFromThisDevice
+    }
+  }, [user?.id])
 
   // Save tasks to localStorage (Supabase sync handled by individual operations)
   const saveTasks = useCallback((newTasks: Task[]) => {

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { getCurrentUser, onAuthStateChange, signInWithGoogle, signOut } from '@/lib/supabase/auth'
 import type { User } from '@supabase/supabase-js'
+import { ALL_STORAGE_KEYS } from '@/lib/storage-keys'
 
 interface AuthContextType {
   user: User | null
@@ -44,6 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleSignOut = async () => {
     await signOut()
+    if (typeof window !== 'undefined') {
+      ALL_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key))
+    }
     setUser(null)
     setIsGuest(false)
   }
