@@ -9,10 +9,12 @@ import { ProjectNotesView } from './ProjectNotesView'
 import { UpcomingEvents } from './UpcomingEvents'
 import { Navigation } from './Navigation'
 import { format } from 'date-fns'
-import { X } from 'lucide-react'
+import { X, LogOut } from 'lucide-react'
 import type { ViewMode } from '@/types'
+import { useAuth } from './AuthProvider'
 
 export function ToDoTodayApp() {
+  const { signOut } = useAuth()
   const [activeView, setActiveView] = useState<ViewMode>('daily')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [dailyExpanded, setDailyExpanded] = useState(false)
@@ -333,6 +335,41 @@ export function ToDoTodayApp() {
                 Full View
               </button>
             </div>
+          )}
+
+          {/* Logout button - top right */}
+          {showFullViewText && (
+            <button
+              onClick={signOut}
+              title="Sign out"
+              style={{
+                position: 'absolute',
+                top: '24px',
+                right: '24px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px',
+                borderRadius: '6px',
+                animation: 'fadeIn 0.3s ease-in',
+                zIndex: 1,
+                transition: 'color 0.2s ease, background-color 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#FFFFFF'
+                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'rgba(255,255,255,0.6)'
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+            >
+              <LogOut size={16} strokeWidth={1.8} />
+            </button>
           )}
 
           {/* Large Time Display */}
