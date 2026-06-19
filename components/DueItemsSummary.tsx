@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { Plus, Minus } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
+import { useTheme } from '@/hooks/useTheme'
 import { formatDate, isOverdue, getDaysUntilDue, getTasksForDate } from '@/lib/utils'
 import type { Task } from '@/types'
 
@@ -14,6 +15,7 @@ interface DueItemsSummaryProps {
 
 export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryProps) {
   const store = useStore()
+  const { colors } = useTheme()
   const dateStr = formatDate(date)
   const todayStr = formatDate(new Date())
   const isToday = todayStr === dateStr
@@ -121,7 +123,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                     fontFamily: "'DM Sans', sans-serif",
                     fontSize: '10px',
                     fontWeight: 600,
-                    color: '#5A7A5E',
+                    color: colors.muted,
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
                   }}
@@ -146,7 +148,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                           style={{
                             fontFamily: "'DM Sans', sans-serif",
                             fontSize: '13px',
-                            color: task.completed ? '#5A7A5E' : '#1A2E1A',
+                            color: task.completed ? colors.muted : colors.text,
                             textDecoration: task.completed ? 'line-through' : 'none',
                             lineHeight: '1.4',
                             opacity: task.completed ? 0.6 : 1,
@@ -166,7 +168,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                               border: 'none',
                               cursor: 'pointer',
                               padding: '2px',
-                              color: '#5A7A5E',
+                              color: colors.muted,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -194,7 +196,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                               style={{
                                 fontFamily: "'DM Sans', sans-serif",
                                 fontSize: '12px',
-                                color: subtask.completed ? '#5A7A5E' : '#1A2E1A',
+                                color: subtask.completed ? colors.muted : colors.text,
                                 lineHeight: '1.4',
                                 textDecoration: subtask.completed ? 'line-through' : 'none',
                                 opacity: subtask.completed ? 0.6 : 1,
@@ -204,7 +206,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                                 gap: '4px',
                               }}
                             >
-                              <span style={{ color: '#5A7A5E', fontSize: '12px' }}>•</span>
+                              <span style={{ color: colors.muted, fontSize: '12px' }}>•</span>
                               <span>{subtask.text}</span>
                             </div>
                           ))}
@@ -229,7 +231,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                     fontFamily: "'DM Sans', sans-serif",
                     fontSize: '10px',
                     fontWeight: 600,
-                    color: '#5A7A5E',
+                    color: colors.muted,
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
                   }}
@@ -253,8 +255,8 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                             <div
                               className="inline-flex items-center"
                               style={{
-                                backgroundColor: '#FFDF00',
-                                color: '#1A2E1A',
+                                backgroundColor: colors.yellow,
+                                color: colors.text,
                                 fontFamily: "'DM Sans', sans-serif",
                                 fontSize: '10px',
                                 fontWeight: 600,
@@ -275,7 +277,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                           style={{
                             fontFamily: "'DM Sans', sans-serif",
                             fontSize: '13px',
-                            color: '#1A2E1A',
+                            color: colors.text,
                             lineHeight: '1.4',
                             cursor: 'pointer',
                           }}
@@ -293,7 +295,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                               border: 'none',
                               cursor: 'pointer',
                               padding: '2px',
-                              color: '#5A7A5E',
+                              color: colors.muted,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -321,7 +323,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                               style={{
                                 fontFamily: "'DM Sans', sans-serif",
                                 fontSize: '12px',
-                                color: subtask.completed ? '#5A7A5E' : '#1A2E1A',
+                                color: subtask.completed ? colors.muted : colors.text,
                                 lineHeight: '1.4',
                                 textDecoration: subtask.completed ? 'line-through' : 'none',
                                 opacity: subtask.completed ? 0.6 : 1,
@@ -331,7 +333,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                                 gap: '4px',
                               }}
                             >
-                              <span style={{ color: '#5A7A5E', fontSize: '12px' }}>•</span>
+                              <span style={{ color: colors.muted, fontSize: '12px' }}>•</span>
                               <span>{subtask.text}</span>
                             </div>
                           ))}
@@ -356,7 +358,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '14px',
                 fontWeight: 700,
-                color: '#F78FB3',
+                color: colors.pink,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
               }}
@@ -385,7 +387,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                         <div
                           className="inline-flex items-center"
                           style={{
-                            backgroundColor: '#F78FB3',
+                            backgroundColor: colors.pink,
                             color: '#FFFFFF',
                             fontFamily: "'DM Sans', sans-serif",
                             fontSize: '10px',
@@ -425,7 +427,7 @@ export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryPro
                           border: 'none',
                           cursor: 'pointer',
                           padding: '2px',
-                          color: '#5A7A5E',
+                          color: colors.muted,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',

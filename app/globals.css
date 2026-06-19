@@ -31,23 +31,39 @@
     min-height: 100dvh;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.3s ease;
+  }
+
+  [data-theme='inverted'] body {
+    background-color: #ffffff;
   }
 }
 
 /* Floating card base — apply to every top-level panel */
 .todo-card {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 18px;
   box-shadow: 0 4px 24px rgba(0, 40, 25, 0.18);
   overflow: hidden;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+[data-theme='inverted'] .mobile-app .todo-card {
+  background: #006747;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
 }
 
 /* Card header — white background with green text */
 .card-header {
-  background: #FFFFFF;
+  background: #ffffff;
   padding: 20px 22px 18px;
-  border-bottom: 1px solid #E8EFE6;
-  /* Note: Individual components may override paddingRight to respect rounded corners */
+  border-bottom: 1px solid #e8efe6;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme='inverted'] .mobile-app .card-header {
+  background: #006747;
+  border-bottom-color: rgba(255, 255, 255, 0.15);
 }
 
 .card-header h1,
@@ -55,11 +71,23 @@
   font-family: 'Playfair Display', serif;
   color: #006747;
   margin: 0;
+  transition: color 0.3s ease;
+}
+
+[data-theme='inverted'] .mobile-app .card-header h1,
+[data-theme='inverted'] .mobile-app .card-header h2 {
+  color: #ffffff;
 }
 
 .card-header p,
 .card-header span {
-  color: #5A7A5E;
+  color: #5a7a5e;
+  transition: color 0.3s ease;
+}
+
+[data-theme='inverted'] .mobile-app .card-header p,
+[data-theme='inverted'] .mobile-app .card-header span {
+  color: #c8d5c2;
 }
 
 /* TipTap Editor Styles */
@@ -153,4 +181,89 @@
   to {
     opacity: 1;
   }
+}
+
+@keyframes welcomeFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes settingsSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Inverted theme — override inline-styled content inside mobile cards */
+[data-theme='inverted'] .mobile-app .themed-content,
+[data-theme='inverted'] .mobile-app .themed-content [style*='color: rgb(26, 46, 26)'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='color:#1A2E1A'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='color: #1A2E1A'] {
+  color: #e8efe6 !important;
+}
+
+[data-theme='inverted'] .mobile-app .themed-content [style*='color: rgb(90, 122, 94)'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='color:#5A7A5E'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='color: #5A7A5E'] {
+  color: #c8d5c2 !important;
+}
+
+[data-theme='inverted'] .mobile-app .themed-content [style*='color: rgb(0, 103, 71)'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='color:#006747'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='color: #006747'] {
+  color: #ffffff !important;
+}
+
+[data-theme='inverted'] .mobile-app .themed-content [style*='background-color: rgb(255, 255, 255)'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='background-color:#FFFFFF'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='background-color: #FFFFFF'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='background: rgb(255, 255, 255)'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='background:#FFFFFF'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='background: #FFFFFF'] {
+  background-color: #005a3c !important;
+}
+
+[data-theme='inverted'] .mobile-app .themed-content [style*='background-color: rgb(245, 249, 247)'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='background-color:#F5F9F7'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='background-color: #F5F9F7'] {
+  background-color: #005a3c !important;
+}
+
+[data-theme='inverted'] .mobile-app .themed-content [style*='background-color: rgb(232, 239, 230)'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='background-color:#E8EFE6'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='background-color: #E8EFE6'] {
+  background-color: #004d33 !important;
+}
+
+[data-theme='inverted'] .mobile-app .themed-content [style*='border'][style*='rgb(232, 239, 230)'],
+[data-theme='inverted'] .mobile-app .themed-content [style*='border'][style*='#E8EFE6'] {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme='inverted'] .mobile-app .ProseMirror {
+  color: #e8efe6;
+  background: transparent;
+}
+
+[data-theme='inverted'] .mobile-app input,
+[data-theme='inverted'] .mobile-app select,
+[data-theme='inverted'] .mobile-app textarea {
+  background-color: #005a3c !important;
+  color: #e8efe6 !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme='inverted'] .mobile-app ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
 }

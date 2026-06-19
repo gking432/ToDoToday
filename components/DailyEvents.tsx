@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, X, Repeat } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import { formatDate, getEventsForDate } from '@/lib/utils'
 import type { Event, RecurrencePattern } from '@/types'
+import { useTheme } from '@/hooks/useTheme'
 import { CalendarPopup } from './CalendarPopup'
 import { RecurringDeleteModal } from './RecurringDeleteModal'
 
@@ -15,6 +16,7 @@ interface DailyEventsProps {
 
 export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
   const store = useStore()
+  const { colors } = useTheme()
   const dateStr = formatDate(date)
   const [showForm, setShowForm] = useState(false)
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
@@ -156,7 +158,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
             fontFamily: "'DM Sans', sans-serif",
             fontSize: '10px',
             fontWeight: 600,
-            color: '#5A7A5E',
+            color: colors.muted,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
           }}
@@ -170,8 +172,8 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
           style={{
             padding: '12px',
             borderRadius: '10px',
-            backgroundColor: '#F5F9F7',
-            border: '1px solid #E8EFE6',
+            backgroundColor: colors.surfaceAlt,
+            border: `1px solid ${colors.border}`,
             marginBottom: '12px',
           }}
         >
@@ -181,7 +183,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                 style={{
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: '11px',
-                  color: '#5A7A5E',
+                  color: colors.muted,
                   fontWeight: 500,
                   display: 'block',
                   marginBottom: '4px',
@@ -232,7 +234,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                 style={{
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: '12px',
-                  color: '#5A7A5E',
+                  color: colors.muted,
                   cursor: 'pointer',
                   userSelect: 'none',
                 }}
@@ -248,7 +250,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                     style={{
                       fontFamily: "'DM Sans', sans-serif",
                       fontSize: '11px',
-                      color: '#5A7A5E',
+                      color: colors.muted,
                       fontWeight: 500,
                       display: 'block',
                       marginBottom: '4px',
@@ -266,7 +268,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                       border: '1px solid #E8EFE6',
                       fontFamily: "'DM Sans', sans-serif",
                       fontSize: '13px',
-                      color: '#1A2E1A',
+                      color: colors.text,
                       outline: 'none',
                     }}
                   >
@@ -283,7 +285,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                     style={{
                       fontFamily: "'DM Sans', sans-serif",
                       fontSize: '11px',
-                      color: '#5A7A5E',
+                      color: colors.muted,
                       fontWeight: 500,
                       display: 'block',
                       marginBottom: '4px',
@@ -301,7 +303,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                       border: '1px solid #E8EFE6',
                       fontFamily: "'DM Sans', sans-serif",
                       fontSize: '13px',
-                      color: '#1A2E1A',
+                      color: colors.text,
                       outline: 'none',
                     }}
                   >
@@ -320,7 +322,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                 style={{
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: '11px',
-                  color: '#5A7A5E',
+                  color: colors.muted,
                   fontWeight: 500,
                   display: 'block',
                   marginBottom: '4px',
@@ -379,7 +381,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                     background: 'none',
                     fontFamily: "'DM Sans', sans-serif",
                     fontSize: '11px',
-                    color: '#5A7A5E',
+                    color: colors.muted,
                     cursor: 'pointer',
                     textDecoration: 'underline',
                   }}
@@ -399,7 +401,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                   backgroundColor: 'transparent',
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: '12px',
-                  color: '#5A7A5E',
+                  color: colors.muted,
                   cursor: 'pointer',
                 }}
               >
@@ -431,7 +433,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
             style={{
               fontFamily: "'DM Sans', sans-serif",
               fontSize: '13px',
-              color: '#5A7A5E',
+              color: colors.muted,
               fontStyle: 'italic',
             }}
           >
@@ -443,7 +445,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
             style={{
               fontFamily: "'DM Sans', sans-serif",
               fontSize: '11px',
-              color: '#5A7A5E',
+              color: colors.muted,
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -477,8 +479,8 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
               style={{
                 padding: '10px 12px',
                 borderRadius: '10px',
-                backgroundColor: '#F5F9F7',
-                border: '1px solid #E8EFE6',
+                backgroundColor: colors.surfaceAlt,
+                border: `1px solid ${colors.border}`,
                 position: 'relative',
               }}
               onMouseEnter={(e) => {
@@ -495,7 +497,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                   style={{
                     fontFamily: "'DM Sans', sans-serif",
                     fontSize: '13px',
-                    color: '#1A2E1A',
+                    color: colors.text,
                     lineHeight: '1.4',
                     fontWeight: 500,
                     marginBottom: '4px',
@@ -520,7 +522,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                   style={{
                     fontFamily: "'DM Sans', sans-serif",
                     fontSize: '11px',
-                    color: '#5A7A5E',
+                    color: colors.muted,
                     marginBottom: event.location ? '4px' : '0',
                   }}
                 >
@@ -535,7 +537,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                     style={{
                       fontFamily: "'DM Sans', sans-serif",
                       fontSize: '11px',
-                      color: '#5A7A5E',
+                      color: colors.muted,
                       fontStyle: 'italic',
                     }}
                   >
@@ -560,7 +562,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: '#5A7A5E',
+                      color: colors.muted,
                       padding: '4px',
                       display: 'flex',
                       alignItems: 'center',
@@ -577,7 +579,7 @@ export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: '#5A7A5E',
+                      color: colors.muted,
                       padding: '4px',
                       display: 'flex',
                       alignItems: 'center',
