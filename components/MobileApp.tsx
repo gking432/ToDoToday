@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Settings } from 'lucide-react'
 import { DailyView } from './DailyView'
 import { ToDoList } from './ToDoList'
 import { MonthlyView } from './MonthlyView'
@@ -53,32 +52,6 @@ export function MobileApp() {
             paddingTop: 'max(12px, env(safe-area-inset-top))',
           }}
         >
-          <button
-            type="button"
-            onClick={() => setShowSettings(true)}
-            aria-label="Settings"
-            style={{
-              position: 'absolute',
-              top: 'max(12px, env(safe-area-inset-top))',
-              right: '12px',
-              zIndex: 10,
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              border: `1.5px solid ${colors.navBorder}`,
-              background: colors.navBg,
-              color: colors.navText,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0, 40, 25, 0.12)',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            <Settings size={18} strokeWidth={1.8} />
-          </button>
-
           {activeTab === 'today' && (
             <div
               className="todo-card themed-content flex flex-col flex-1 min-h-0"
@@ -91,6 +64,7 @@ export function MobileApp() {
                 onExpand={() => setDailyExpanded(true)}
                 onCollapse={() => setDailyExpanded(false)}
                 eventsReadOnly
+                onOpenSettings={() => setShowSettings(true)}
               />
             </div>
           )}

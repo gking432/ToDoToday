@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { format } from 'date-fns'
-import { ChevronDown, ChevronUp, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, X, Settings } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
 import { DailyEvents } from './DailyEvents'
 import { DueItemsSummary } from './DueItemsSummary'
 import { useStore } from '@/hooks/useStore'
@@ -17,9 +18,11 @@ interface DailyViewProps {
   onExpand?: () => void
   onCollapse?: () => void
   eventsReadOnly?: boolean
+  onOpenSettings?: () => void
 }
 
-export function DailyView({ date, navigate, isExpanded = false, onExpand, onCollapse, eventsReadOnly = false }: DailyViewProps) {
+export function DailyView({ date, navigate, isExpanded = false, onExpand, onCollapse, eventsReadOnly = false, onOpenSettings }: DailyViewProps) {
+  const { colors } = useTheme()
   const store = useStore()
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null)
   const [draggingEventId, setDraggingEventId] = useState<string | null>(null)
@@ -286,7 +289,7 @@ export function DailyView({ date, navigate, isExpanded = false, onExpand, onColl
           {format(date, 'MMMM d, yyyy')}
         </p>
           </div>
-          {/* Today button — only show when viewing a different day */}
+          <div className="flex items-center gap-2" style={{ marginTop: '4px' }}>
           {!isToday && (
             <button
               onClick={() => navigate('daily', new Date())}
@@ -295,24 +298,44 @@ export function DailyView({ date, navigate, isExpanded = false, onExpand, onColl
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '11px',
                 fontWeight: 500,
-                color: '#006747',
-                background: '#E8EFE6',
+                color: colors.heading,
+                background: colors.mutedBg,
                 border: 'none',
                 padding: '6px 12px',
                 borderRadius: '6px',
                 cursor: 'pointer',
-                marginTop: '4px',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#C8D5C2'
+                e.currentTarget.style.opacity = '0.85'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#E8EFE6'
+                e.currentTarget.style.opacity = '1'
               }}
             >
               Today
             </button>
           )}
+          {onOpenSettings && (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              aria-label="Settings"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: colors.muted,
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <Settings size={20} strokeWidth={1.8} />
+            </button>
+          )}
+          </div>
         </div>
       </div>
 
