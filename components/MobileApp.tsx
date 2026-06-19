@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { Settings } from 'lucide-react'
 import { DailyView } from './DailyView'
 import { ToDoList } from './ToDoList'
-import { MonthlyView } from './MonthlyView'
+import { WeeklyView } from './WeeklyView'
 import { ProjectNotesView } from './ProjectNotesView'
 import { MobileBottomNav, type MobileTab } from './MobileBottomNav'
 import { WelcomeSplash } from './WelcomeSplash'
@@ -96,7 +96,7 @@ export function MobileApp() {
               className="todo-card themed-content flex flex-col flex-1 min-h-0"
               style={{ borderRadius: '16px', boxShadow: colors.shadow }}
             >
-              <MonthlyView selectedDate={selectedDate} navigate={navigate} />
+              <WeeklyView selectedDate={selectedDate} navigate={navigate} />
             </div>
           )}
 
