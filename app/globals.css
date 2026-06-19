@@ -205,6 +205,30 @@
   }
 }
 
+/* Settings gear — borderless, Today tab only */
+.mobile-settings-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none !important;
+  outline: none;
+  background: none !important;
+  box-shadow: none !important;
+  padding: 4px;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 0;
+}
+
+.mobile-settings-btn:focus,
+.mobile-settings-btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 /* Inverted theme — override inline-styled content inside mobile cards */
 [data-theme='inverted'] .mobile-app .themed-content,
 [data-theme='inverted'] .mobile-app .themed-content [style*='color: rgb(26, 46, 26)'],

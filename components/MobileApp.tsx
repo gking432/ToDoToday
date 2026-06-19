@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { Settings } from 'lucide-react'
 import { DailyView } from './DailyView'
 import { ToDoList } from './ToDoList'
 import { MonthlyView } from './MonthlyView'
@@ -31,6 +32,18 @@ export function MobileApp() {
     }
   }, [])
 
+  const settingsButton = (
+    <button
+      type="button"
+      className="mobile-settings-btn"
+      onClick={() => setShowSettings(true)}
+      aria-label="Settings"
+      style={{ color: colors.muted }}
+    >
+      <Settings size={20} strokeWidth={1.8} />
+    </button>
+  )
+
   return (
     <>
       {showWelcome && <WelcomeSplash onComplete={() => setShowWelcome(false)} />}
@@ -46,7 +59,7 @@ export function MobileApp() {
         }}
       >
         <main
-          className="flex-1 min-h-0 flex flex-col relative"
+          className="flex-1 min-h-0 flex flex-col"
           style={{
             padding: '12px 12px 0',
             paddingTop: 'max(12px, env(safe-area-inset-top))',
@@ -64,7 +77,7 @@ export function MobileApp() {
                 onExpand={() => setDailyExpanded(true)}
                 onCollapse={() => setDailyExpanded(false)}
                 eventsReadOnly
-                onOpenSettings={() => setShowSettings(true)}
+                headerAction={settingsButton}
               />
             </div>
           )}
@@ -74,12 +87,7 @@ export function MobileApp() {
               className="todo-card themed-content flex flex-col flex-1 min-h-0"
               style={{ borderRadius: '16px', boxShadow: colors.shadow }}
             >
-              <div className="card-header flex-shrink-0">
-                <h1 style={{ fontSize: '22px', fontWeight: 600 }}>To Do</h1>
-              </div>
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <ToDoList />
-              </div>
+              <ToDoList />
             </div>
           )}
 

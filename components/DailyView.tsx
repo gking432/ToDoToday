@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { format } from 'date-fns'
-import { ChevronDown, ChevronUp, X, Settings } from 'lucide-react'
+import { ChevronDown, ChevronUp, X } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { DailyEvents } from './DailyEvents'
 import { DueItemsSummary } from './DueItemsSummary'
@@ -18,10 +18,10 @@ interface DailyViewProps {
   onExpand?: () => void
   onCollapse?: () => void
   eventsReadOnly?: boolean
-  onOpenSettings?: () => void
+  headerAction?: ReactNode
 }
 
-export function DailyView({ date, navigate, isExpanded = false, onExpand, onCollapse, eventsReadOnly = false, onOpenSettings }: DailyViewProps) {
+export function DailyView({ date, navigate, isExpanded = false, onExpand, onCollapse, eventsReadOnly = false, headerAction }: DailyViewProps) {
   const { colors } = useTheme()
   const store = useStore()
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null)
@@ -315,26 +315,7 @@ export function DailyView({ date, navigate, isExpanded = false, onExpand, onColl
               Today
             </button>
           )}
-          {onOpenSettings && (
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              aria-label="Settings"
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: colors.muted,
-                padding: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <Settings size={20} strokeWidth={1.8} />
-            </button>
-          )}
+          {headerAction}
           </div>
         </div>
       </div>
