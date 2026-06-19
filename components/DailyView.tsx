@@ -16,9 +16,10 @@ interface DailyViewProps {
   isExpanded?: boolean
   onExpand?: () => void
   onCollapse?: () => void
+  eventsReadOnly?: boolean
 }
 
-export function DailyView({ date, navigate, isExpanded = false, onExpand, onCollapse }: DailyViewProps) {
+export function DailyView({ date, navigate, isExpanded = false, onExpand, onCollapse, eventsReadOnly = false }: DailyViewProps) {
   const store = useStore()
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null)
   const [draggingEventId, setDraggingEventId] = useState<string | null>(null)
@@ -338,8 +339,8 @@ export function DailyView({ date, navigate, isExpanded = false, onExpand, onColl
             position: 'relative',
           }}
         >
-            <DailyEvents date={date} />
-          <DueItemsSummary date={date} />
+            <DailyEvents date={date} readOnly={eventsReadOnly} />
+          <DueItemsSummary date={date} alwaysShow={eventsReadOnly} />
 
           {/* View full day button — at the bottom of scrollable content, centered */}
             <div 

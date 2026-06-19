@@ -9,9 +9,10 @@ import type { Task } from '@/types'
 
 interface DueItemsSummaryProps {
   date: Date
+  alwaysShow?: boolean
 }
 
-export function DueItemsSummary({ date }: DueItemsSummaryProps) {
+export function DueItemsSummary({ date, alwaysShow = false }: DueItemsSummaryProps) {
   const store = useStore()
   const dateStr = formatDate(date)
   const todayStr = formatDate(new Date())
@@ -101,8 +102,8 @@ export function DueItemsSummary({ date }: DueItemsSummaryProps) {
     })
   }
 
-  // If nothing in any section, show blank
-  if (overdueTasks.length === 0 && dueTasks.length === 0 && upcomingTasks.length === 0) {
+  // If nothing in any section, show blank (unless alwaysShow for mobile Today view)
+  if (!alwaysShow && overdueTasks.length === 0 && dueTasks.length === 0 && upcomingTasks.length === 0) {
     return null
   }
 
@@ -112,7 +113,7 @@ export function DueItemsSummary({ date }: DueItemsSummaryProps) {
       <div className="flex gap-4" style={{ width: '100%' }}>
         {/* Due Today column */}
         <div className="flex-1 min-w-0">
-          {dueTasks.length > 0 && (
+          {(dueTasks.length > 0 || alwaysShow) && (
             <>
               <div className="mb-3">
                 <span
@@ -128,6 +129,7 @@ export function DueItemsSummary({ date }: DueItemsSummaryProps) {
                   Due {isToday ? 'Today' : format(date, 'MMM d')}
                 </span>
               </div>
+              {dueTasks.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {dueTasks.map((task) => {
                   const hasSubtasks = task.subtasks && task.subtasks.length > 0
@@ -212,13 +214,14 @@ export function DueItemsSummary({ date }: DueItemsSummaryProps) {
                   )
                 })}
               </div>
+              )}
             </>
           )}
         </div>
 
         {/* Upcoming column */}
         <div className="flex-1 min-w-0">
-          {upcomingTasks.length > 0 && (
+          {(upcomingTasks.length > 0 || alwaysShow) && (
             <>
               <div className="mb-3">
                 <span
@@ -234,6 +237,7 @@ export function DueItemsSummary({ date }: DueItemsSummaryProps) {
                   Upcoming
                 </span>
               </div>
+              {upcomingTasks.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {upcomingTasks.map((task) => {
                   const hasSubtasks = task.subtasks && task.subtasks.length > 0
@@ -337,6 +341,7 @@ export function DueItemsSummary({ date }: DueItemsSummaryProps) {
                   )
                 })}
               </div>
+              )}
             </>
           )}
         </div>

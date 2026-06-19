@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ToDoToday — Emergency recovery</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    button { display: block; width: 100%; margin: 0.5rem 0; padding: 0.75rem; font-size: 1rem; cursor: pointer; }
+    pre { background: #f4f4f4; padding: 0.75rem; overflow: auto; font-size: 0.85rem; }
+    .warn { color: #b45309; }
+    .ok { color: #047857; }
+  </style>
+</head>
+<body>
+  <h1>Emergency recovery</h1>
+  <p class="warn"><strong>Do not close</strong> the browser tab that still shows your tasks until you download a backup.</p>
+  <p>This page only reads <code>localStorage</code> in <strong>this browser</strong> — open it on the tab/device that still has your data.</p>
+
+  <pre id="counts">Checking…</pre>
+
+  <button type="button" id="download">Download backup JSON</button>
+  <button type="button" id="copy">Copy backup to clipboard</button>
+
+  <p id="msg"></p>
+
+  <p>Then go to <a id="recovery-link" href="#">the full recovery page</a> (after sign-in) to upload to Supabase.</p>
+
+  <script>
+    const KEYS = {
+      tasks: 'todoToday_tasks',
+      events: 'todoToday_events',
+      journal: 'todoToday_journal',
+      projects: 'todoToday_projects',
+    };
+
+    const base = location.pathname.includes('/ToDoToday') ? '/ToDoToday' : '';
+    document.getElementById('recovery-link').href = base + '/recovery';
+
+    function readBackup() {
+      return {
+        tasks: JSON.parse(localStorage.getItem(KEYS.tasks) || '[]'),
+        events: JSON.parse(localStorage.getItem(KEYS.events) || '[]'),
+        journal: JSON.parse(localStorage.getItem(KEYS.journal) || '{}'),
+        projects: JSON.parse(localStorage.getItem(KEYS.projects) || '[]'),
+      };
+    }
+
+    function showCounts() {
+      const b = readBackup();
+      const lines = [
+        'Tasks: ' + b.tasks.length,
+        'Projects: ' + b.projects.length,
+        'Events: ' + b.events.length,
+        'Journal entries: ' + Object.keys(b.journal).length,
+      ];
+      const el = document.getElementById('counts');
+      el.textContent = lines.join('\n');
+      if (b.tasks.length === 0 && b.projects.length === 0) {
+        el.innerHTML = lines.join('<br>') + '<br><br><span class="warn">Nothing in localStorage here. Use the tab that still shows your items, or load a backup file on /recovery.</span>';
+      } else {
+        el.className = 'ok';
+      }
+      return b;
+    }
+
+    document.getElementById('download').onclick = function () {
+      const b = readBackup();
+      const blob = new Blob([JSON.stringify(b, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'todoToday-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+      document.getElementById('msg').textContent = 'Download started.';
+    };
+
+    document.getElementById('copy').onclick = async function () {
+      const b = readBackup();
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(b));
+        document.getElementById('msg').textContent = 'Copied to clipboard.';
+      } catch (e) {
+        document.getElementById('msg').textContent = 'Copy failed — use Download instead.';
+      }
+    };
+
+    showCounts();
+  </script>
+</body>
+</html>

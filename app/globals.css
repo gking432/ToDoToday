@@ -22,11 +22,15 @@
 @layer base {
   html {
     font-family: 'DM Sans', sans-serif;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     background-color: #006747;
     min-height: 100vh;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 

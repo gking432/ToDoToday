@@ -10,9 +10,10 @@ import { RecurringDeleteModal } from './RecurringDeleteModal'
 
 interface DailyEventsProps {
   date: Date
+  readOnly?: boolean
 }
 
-export function DailyEvents({ date }: DailyEventsProps) {
+export function DailyEvents({ date, readOnly = false }: DailyEventsProps) {
   const store = useStore()
   const dateStr = formatDate(date)
   const [showForm, setShowForm] = useState(false)
@@ -164,7 +165,7 @@ export function DailyEvents({ date }: DailyEventsProps) {
         </span>
       </div>
 
-      {(showForm || editingEventId) ? (
+      {!readOnly && (showForm || editingEventId) ? (
         <div
           style={{
             padding: '12px',
@@ -436,6 +437,7 @@ export function DailyEvents({ date }: DailyEventsProps) {
           >
             No events
           </div>
+          {!readOnly && (
           <button
             onClick={() => setShowForm(true)}
             style={{
@@ -461,6 +463,7 @@ export function DailyEvents({ date }: DailyEventsProps) {
           >
             + Create an Event
           </button>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -540,6 +543,7 @@ export function DailyEvents({ date }: DailyEventsProps) {
                   </div>
                 )}
               </div>
+                {!readOnly && (
                 <div 
                   data-event-buttons
                   style={{ 
@@ -585,6 +589,7 @@ export function DailyEvents({ date }: DailyEventsProps) {
                     <Trash2 size={14} />
                   </button>
                 </div>
+                )}
             </div>
             )
           })}

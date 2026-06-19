@@ -2,10 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import type { Task, JournalEntry, Event, Subtask, Project, RecurrencePattern } from '@/types'
-import { formatDate } from '@/lib/utils'
-import { useAuth } from '@/components/AuthProvider'
-import * as sync from '@/lib/supabase/sync'
-import { useRealtimeSync } from './useRealtimeSync'
 
 import { TASKS_KEY, JOURNAL_KEY, EVENTS_KEY, PROJECTS_KEY } from '@/lib/storage-keys'
 
@@ -76,14 +72,19 @@ function getStoredProjects(): Project[] {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
   const [tasks, setTasks] = useState<Task[]>([])
   const [journal, setJournal] = useState<Record<string, JournalEntry>>({})
   const [events, setEvents] = useState<Event[]>([])
   const [projects, setProjects] = useState<Project[]>([])
-  const [isLoadingFromSupabase, setIsLoadingFromSupabase] = useState(false)
-  const activeRemoteLoadSeqRef = useRef(0)
-  const isSyncingRef = useRef(false)
+  const tasksRef = useRef(tasks)
+  const journalRef = useRef(journal)
+  const eventsRef = useRef(events)
+  const projectsRef = useRef(projects)
+
+  tasksRef.current = tasks
+  journalRef.current = journal
+  eventsRef.current = events
+  projectsRef.current = projects
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -106,269 +107,103 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setProjects(getStoredProjects())
   }, [])
 
-  // On sign-in, Supabase is the source of truth.
-  // We replace local state with the server snapshot rather than merging,
-  // because a local-first merge resurrects items deleted on other devices.
-  // Individual edits still push to Supabase via the per-operation upserts below,
-  // and live cross-device updates come through useRealtimeSync.
-  useEffect(() => {
-    const userId = user?.id
-    if (!userId) return
-
-    const loadSeq = ++activeRemoteLoadSeqRef.current
-
-    const loadFromSupabase = async () => {
-      isSyncingRef.current = true
-      setIsLoadingFromSupabase(true)
-
-      try {
-        const [supabaseTasks, supabaseEvents, supabaseJournal, supabaseProjects] = await Promise.all([
-          sync.fetchTasksFromSupabase(userId).catch((err) => {
-            console.error('fetchTasksFromSupabase:', err)
-            return [] as Task[]
-          }),
-          sync.fetchEventsFromSupabase(userId).catch((err) => {
-            console.error('fetchEventsFromSupabase:', err)
-            return [] as Event[]
-          }),
-          sync.fetchJournalFromSupabase(userId).catch((err) => {
-            console.error('fetchJournalFromSupabase:', err)
-            return {}
-          }),
-          sync.fetchProjectsFromSupabase(userId).catch((err) => {
-            console.error('fetchProjectsFromSupabase:', err)
-            return [] as Project[]
-          }),
-        ])
-
-        if (activeRemoteLoadSeqRef.current !== loadSeq) return
-
-        setTasks(supabaseTasks)
-        setEvents(supabaseEvents)
-        setJournal(supabaseJournal)
-        setProjects(supabaseProjects)
-
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(TASKS_KEY, JSON.stringify(supabaseTasks))
-          localStorage.setItem(EVENTS_KEY, JSON.stringify(supabaseEvents))
-          localStorage.setItem(JOURNAL_KEY, JSON.stringify(supabaseJournal))
-          localStorage.setItem(PROJECTS_KEY, JSON.stringify(supabaseProjects))
-        }
-      } catch (error) {
-        console.error('Error loading from Supabase:', error)
-      } finally {
-        if (activeRemoteLoadSeqRef.current === loadSeq) {
-          setIsLoadingFromSupabase(false)
-          isSyncingRef.current = false
-        }
-      }
-    }
-
-    loadFromSupabase()
-
-    return () => {
-      activeRemoteLoadSeqRef.current++
-    }
-  }, [user?.id])
-
-  // Real-time sync handlers
-  const handleTaskChange = useCallback((task: Task) => {
-    setTasks((currentTasks) => {
-      const existingIndex = currentTasks.findIndex((t) => t.id === task.id)
-      if (existingIndex >= 0) {
-        // Update existing task only if remote is newer
-        const existing = currentTasks[existingIndex]
-        const existingTime = new Date(existing.updatedAt || existing.createdAt).getTime()
-        const remoteTime = new Date(task.updatedAt || task.createdAt).getTime()
-        if (remoteTime > existingTime) {
-          const updated = [...currentTasks]
-          updated[existingIndex] = task
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(TASKS_KEY, JSON.stringify(updated))
-          }
-          return updated
-        }
-        return currentTasks
-      } else {
-        // Add new task
-        const updated = [...currentTasks, task]
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(TASKS_KEY, JSON.stringify(updated))
-        }
-        return updated
-      }
-    })
-  }, [])
-
-  const handleTaskDelete = useCallback((taskId: string) => {
-    setTasks((currentTasks) => {
-      const updated = currentTasks.filter((t) => t.id !== taskId)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(TASKS_KEY, JSON.stringify(updated))
-      }
-      return updated
-    })
-  }, [])
-
-  const handleEventChange = useCallback((event: Event) => {
-    setEvents((currentEvents) => {
-      const existingIndex = currentEvents.findIndex((e) => e.id === event.id)
-      if (existingIndex >= 0) {
-        // Update existing event only if remote is newer
-        const existing = currentEvents[existingIndex]
-        const existingTime = new Date(existing.updatedAt || existing.createdAt).getTime()
-        const remoteTime = new Date(event.updatedAt || event.createdAt).getTime()
-        if (remoteTime > existingTime) {
-          const updated = [...currentEvents]
-          updated[existingIndex] = event
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(EVENTS_KEY, JSON.stringify(updated))
-          }
-          return updated
-        }
-        return currentEvents
-      } else {
-        // Add new event
-        const updated = [...currentEvents, event]
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(EVENTS_KEY, JSON.stringify(updated))
-        }
-        return updated
-      }
-    })
-  }, [])
-
-  const handleEventDelete = useCallback((eventId: string) => {
-    setEvents((currentEvents) => {
-      const updated = currentEvents.filter((e) => e.id !== eventId)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(EVENTS_KEY, JSON.stringify(updated))
-      }
-      return updated
-    })
-  }, [])
-
-  const handleJournalChange = useCallback((entry: JournalEntry) => {
-    setJournal((currentJournal) => {
-      const existing = currentJournal[entry.date]
-      if (existing) {
-        // Update only if remote is newer
-        const existingTime = new Date(existing.updatedAt).getTime()
-        const remoteTime = new Date(entry.updatedAt).getTime()
-        if (remoteTime > existingTime) {
-          const updated = { ...currentJournal, [entry.date]: entry }
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(JOURNAL_KEY, JSON.stringify(updated))
-          }
-          return updated
-        }
-        return currentJournal
-      } else {
-        // Add new entry
-        const updated = { ...currentJournal, [entry.date]: entry }
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(JOURNAL_KEY, JSON.stringify(updated))
-        }
-        return updated
-      }
-    })
-  }, [])
-
-  const handleProjectChange = useCallback((project: Project) => {
-    setProjects((currentProjects) => {
-      const existingIndex = currentProjects.findIndex((p) => p.id === project.id)
-      if (existingIndex >= 0) {
-        // Update existing project only if remote is newer
-        const existing = currentProjects[existingIndex]
-        const existingTime = new Date(existing.updatedAt).getTime()
-        const remoteTime = new Date(project.updatedAt).getTime()
-        if (remoteTime > existingTime) {
-          const updated = [...currentProjects]
-          updated[existingIndex] = project
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated))
-          }
-          return updated
-        }
-        return currentProjects
-      } else {
-        // Add new project
-        const updated = [...currentProjects, project]
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated))
-        }
-        return updated
-      }
-    })
-  }, [])
-
-  const handleProjectDelete = useCallback((projectId: string) => {
-    setProjects((currentProjects) => {
-      const updated = currentProjects.filter((p) => p.id !== projectId)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated))
-      }
-      return updated
-    })
-  }, [])
-
-  // Set up real-time sync
-  useRealtimeSync({
-    userId: user?.id || null,
-    onTaskChange: handleTaskChange,
-    onTaskDelete: handleTaskDelete,
-    onEventChange: handleEventChange,
-    onEventDelete: handleEventDelete,
-    onJournalChange: handleJournalChange,
-    onProjectChange: handleProjectChange,
-    onProjectDelete: handleProjectDelete,
-  })
-
-  // One-time recovery helper: overwrite Supabase with this device's local data.
-  // Call from the browser console on the device that has the correct data:
-  //   await window.__todoForcePushFromThisDevice()
-  // Then sign out and back in on the other devices to pull the fresh state.
+  // Local backup helpers (browser console)
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const userId = user?.id
-    if (!userId) {
-      delete (window as any).__todoForcePushFromThisDevice
-      return
-    }
-    ;(window as any).__todoForcePushFromThisDevice = async () => {
-      const { supabase } = await import('@/lib/supabase/client')
-      console.log('[force-push] wiping remote rows for user', userId)
-      await Promise.all([
-        supabase.from('tasks').delete().eq('user_id', userId),
-        supabase.from('events').delete().eq('user_id', userId),
-        supabase.from('journal_entries').delete().eq('user_id', userId),
-        supabase.from('projects').delete().eq('user_id', userId),
-      ])
-      const localTasks = getStoredTasks()
-      const localEvents = getStoredEvents()
-      const localJournal = getStoredJournal()
-      const localProjects = getStoredProjects()
-      console.log('[force-push] uploading local', {
-        tasks: localTasks.length,
-        events: localEvents.length,
-        journalEntries: Object.keys(localJournal).length,
-        projects: localProjects.length,
-      })
-      await Promise.all([
-        localTasks.length ? sync.syncTasksToSupabase(userId, localTasks) : Promise.resolve(),
-        localEvents.length ? sync.syncEventsToSupabase(userId, localEvents) : Promise.resolve(),
-        Object.keys(localJournal).length ? sync.syncJournalToSupabase(userId, localJournal) : Promise.resolve(),
-        localProjects.length ? sync.syncProjectsToSupabase(userId, localProjects) : Promise.resolve(),
-      ])
-      console.log('[force-push] done. Sign out and back in on other devices.')
-      return 'Force-push complete.'
-    }
-    return () => {
-      delete (window as any).__todoForcePushFromThisDevice
-    }
-  }, [user?.id])
 
-  // Save tasks to localStorage (Supabase sync handled by individual operations)
+    ;(window as any).__todoEmergencySnapshot = () => {
+      const fromStorage = {
+        tasks: getStoredTasks(),
+        events: getStoredEvents(),
+        journal: getStoredJournal(),
+        projects: getStoredProjects(),
+      }
+      const fromMemory = {
+        tasks: tasksRef.current,
+        events: eventsRef.current,
+        journal: journalRef.current,
+        projects: projectsRef.current,
+      }
+      const pick = (storageLen: number, memoryLen: number, storage: unknown, memory: unknown) =>
+        storageLen >= memoryLen ? storage : memory
+      const backup = {
+        tasks: pick(
+          fromStorage.tasks.length,
+          fromMemory.tasks.length,
+          fromStorage.tasks,
+          fromMemory.tasks
+        ) as Task[],
+        events: pick(
+          fromStorage.events.length,
+          fromMemory.events.length,
+          fromStorage.events,
+          fromMemory.events
+        ) as Event[],
+        journal: pick(
+          Object.keys(fromStorage.journal).length,
+          Object.keys(fromMemory.journal).length,
+          fromStorage.journal,
+          fromMemory.journal
+        ) as Record<string, JournalEntry>,
+        projects: pick(
+          fromStorage.projects.length,
+          fromMemory.projects.length,
+          fromStorage.projects,
+          fromMemory.projects
+        ) as Project[],
+      }
+      console.log('[recovery] snapshot counts', {
+        tasks: backup.tasks.length,
+        events: backup.events.length,
+        journalEntries: Object.keys(backup.journal).length,
+        projects: backup.projects.length,
+      })
+      return backup
+    }
+
+    ;(window as any).__todoEmergencySaveBackup = async () => {
+      const backup = (window as any).__todoEmergencySnapshot()
+      const json = JSON.stringify(backup)
+      try {
+        await navigator.clipboard.writeText(json)
+        console.log('[recovery] Copied backup to clipboard.')
+      } catch {
+        console.log('[recovery] Copy failed — save this JSON manually:', json)
+      }
+      return backup
+    }
+
+    ;(window as any).__todoRestoreBackup = (backup: {
+      tasks?: Task[]
+      events?: Event[]
+      journal?: Record<string, JournalEntry>
+      projects?: Project[]
+    }) => {
+      const data = {
+        tasks: backup.tasks ?? [],
+        events: backup.events ?? [],
+        journal: backup.journal ?? {},
+        projects: backup.projects ?? [],
+      }
+      setTasks(data.tasks)
+      setEvents(data.events)
+      setJournal(data.journal)
+      setProjects(data.projects)
+      localStorage.setItem(TASKS_KEY, JSON.stringify(data.tasks))
+      localStorage.setItem(EVENTS_KEY, JSON.stringify(data.events))
+      localStorage.setItem(JOURNAL_KEY, JSON.stringify(data.journal))
+      localStorage.setItem(PROJECTS_KEY, JSON.stringify(data.projects))
+      console.log('[recovery] Restored from backup.')
+      return 'Restore complete.'
+    }
+
+    return () => {
+      delete (window as any).__todoEmergencySnapshot
+      delete (window as any).__todoEmergencySaveBackup
+      delete (window as any).__todoRestoreBackup
+    }
+  }, [])
+
   const saveTasks = useCallback((newTasks: Task[]) => {
     setTasks(newTasks)
     if (typeof window !== 'undefined') {
@@ -420,13 +255,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       parentTaskId: null,
     }
     saveTasks([...tasks, newTask])
-    
-    // Sync new task to Supabase
-    if (user && !isSyncingRef.current) {
-      sync.upsertTaskToSupabase(user.id, newTask).catch(console.error)
-    }
     return newTask.id
-  }, [tasks, saveTasks, user])
+  }, [tasks, saveTasks])
 
   const updateTask = useCallback((id: string, updates: Partial<Task>, instanceDate?: string) => {
     const updatedTasks = tasks.map(task => {
@@ -464,13 +294,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return task
     })
     saveTasks(updatedTasks)
-    
-    // Also sync individual task update to Supabase
-    const updatedTask = updatedTasks.find(t => t.id === id)
-    if (user && updatedTask && !isSyncingRef.current) {
-      sync.upsertTaskToSupabase(user.id, updatedTask).catch(console.error)
-    }
-  }, [tasks, saveTasks, user])
+  }, [tasks, saveTasks])
 
   const deleteTask = useCallback(
     (id: string, singleInstanceDate?: string) => {
@@ -483,45 +307,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             : t
         )
         saveTasks(updatedTasks)
-        const updatedTask = updatedTasks.find((t) => t.id === id)
-        if (user && updatedTask && !isSyncingRef.current) {
-          sync.upsertTaskToSupabase(user.id, updatedTask).catch(console.error)
-        }
         return
       }
 
       saveTasks(tasks.filter((task) => task.id !== id))
-
-      if (user && !isSyncingRef.current) {
-        sync.deleteTaskFromSupabase(user.id, id).catch(console.error)
-      }
     },
-    [tasks, saveTasks, user]
+    [tasks, saveTasks]
   )
 
   const reorderTasks = useCallback((newOrder: Task[]) => {
     const reordered = newOrder.map((task, index) => ({ ...task, order: index, updatedAt: new Date().toISOString() }))
     saveTasks(reordered)
-    
-    // Sync reordered tasks to Supabase individually
-    if (user && !isSyncingRef.current) {
-      Promise.all(
-        reordered.map(task => sync.upsertTaskToSupabase(user.id, task))
-      ).catch(console.error)
-    }
-  }, [saveTasks, user])
+  }, [saveTasks])
 
   const clearCompleted = useCallback(() => {
-    const completedIds = tasks.filter(task => task.completed).map(t => t.id)
     saveTasks(tasks.filter(task => !task.completed))
-    
-    // Delete completed tasks from Supabase
-    if (user && !isSyncingRef.current) {
-      Promise.all(
-        completedIds.map(id => sync.deleteTaskFromSupabase(user.id, id))
-      ).catch(console.error)
-    }
-  }, [tasks, saveTasks, user])
+  }, [tasks, saveTasks])
 
   // Journal operations
   const saveJournalEntry = useCallback((date: string, content: string) => {
@@ -534,12 +335,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
     }
     saveJournal(newJournal)
-    
-    // Also sync individual journal entry to Supabase
-    if (user && !isSyncingRef.current) {
-      sync.upsertJournalEntryToSupabase(user.id, newJournal[date]).catch(console.error)
-    }
-  }, [journal, saveJournal, user])
+  }, [journal, saveJournal])
 
   const getJournalEntry = useCallback((date: string): JournalEntry | null => {
     return journal[date] || null
@@ -561,13 +357,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString(),
     }
     saveProjects([...projects, newProject])
-    
-    // Sync new project to Supabase
-    if (user && !isSyncingRef.current) {
-      sync.upsertProjectToSupabase(user.id, newProject).catch(console.error)
-    }
     return newProject.id
-  }, [projects, saveProjects, user])
+  }, [projects, saveProjects])
 
   const updateProject = useCallback((id: string, updates: Partial<Project>) => {
     const updatedProjects = projects.map(project => {
@@ -581,22 +372,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return project
     })
     saveProjects(updatedProjects)
-    
-    // Also sync individual project update to Supabase
-    const updatedProject = updatedProjects.find(p => p.id === id)
-    if (user && updatedProject && !isSyncingRef.current) {
-      sync.upsertProjectToSupabase(user.id, updatedProject).catch(console.error)
-    }
-  }, [projects, saveProjects, user])
+  }, [projects, saveProjects])
 
   const deleteProject = useCallback((id: string) => {
     saveProjects(projects.filter(project => project.id !== id))
-    
-    // Also delete from Supabase
-    if (user && !isSyncingRef.current) {
-      sync.deleteProjectFromSupabase(user.id, id).catch(console.error)
-    }
-  }, [projects, saveProjects, user])
+  }, [projects, saveProjects])
 
   const saveProjectContent = useCallback((id: string, content: string) => {
     const updatedProjects = projects.map(project => {
@@ -610,13 +390,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return project
     })
     saveProjects(updatedProjects)
-    
-    // Sync individual project update to Supabase
-    const updatedProject = updatedProjects.find(p => p.id === id)
-    if (user && updatedProject && !isSyncingRef.current) {
-      sync.upsertProjectToSupabase(user.id, updatedProject).catch(console.error)
-    }
-  }, [projects, saveProjects, user])
+  }, [projects, saveProjects])
 
   const getProject = useCallback((id: string): Project | null => {
     return projects.find(project => project.id === id) || null
@@ -657,13 +431,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       recurrence: recurrence ?? null,
     }
     saveEvents([...events, newEvent])
-    
-    // Sync new event to Supabase
-    if (user && !isSyncingRef.current) {
-      sync.upsertEventToSupabase(user.id, newEvent).catch(console.error)
-    }
     return newEvent.id
-  }, [events, saveEvents, user])
+  }, [events, saveEvents])
 
   const updateEvent = useCallback((id: string, updates: Partial<Event>) => {
     const updatedEvents = events.map(event => {
@@ -673,13 +442,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return event
     })
     saveEvents(updatedEvents)
-    
-    // Also sync individual event update to Supabase
-    const updatedEvent = updatedEvents.find(e => e.id === id)
-    if (user && updatedEvent && !isSyncingRef.current) {
-      sync.upsertEventToSupabase(user.id, updatedEvent).catch(console.error)
-    }
-  }, [events, saveEvents, user])
+  }, [events, saveEvents])
 
   const deleteEvent = useCallback(
     (id: string, singleInstanceDate?: string) => {
@@ -692,20 +455,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             : e
         )
         saveEvents(updatedEvents)
-        const updatedEvent = updatedEvents.find((e) => e.id === id)
-        if (user && updatedEvent && !isSyncingRef.current) {
-          sync.upsertEventToSupabase(user.id, updatedEvent).catch(console.error)
-        }
         return
       }
 
       saveEvents(events.filter((ev) => ev.id !== id))
-
-      if (user && !isSyncingRef.current) {
-        sync.deleteEventFromSupabase(user.id, id).catch(console.error)
-      }
     },
-    [events, saveEvents, user]
+    [events, saveEvents]
   )
 
   const value: StoreContextType = {
