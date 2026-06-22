@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, DM_Sans } from 'next/font/google'
 import './globals.css'
 import { StoreProvider } from '@/hooks/useStore'
+import { GitHubSyncProvider } from '@/hooks/useGitHubSync'
 import { ThemeProvider } from '@/hooks/useTheme'
 
 const playfair = Playfair_Display({
@@ -54,7 +55,9 @@ export default function RootLayout({
     <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
       <body className="font-sans antialiased">
         <ThemeProvider>
-          <StoreProvider>{children}</StoreProvider>
+          <StoreProvider>
+            <GitHubSyncProvider>{children}</GitHubSyncProvider>
+          </StoreProvider>
         </ThemeProvider>
       </body>
     </html>

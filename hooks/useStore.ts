@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import type { Task, JournalEntry, Event, Subtask, Project, RecurrencePattern } from '@/types'
 
-import { TASKS_KEY, JOURNAL_KEY, EVENTS_KEY, PROJECTS_KEY } from '@/lib/storage-keys'
+import { TASKS_KEY, JOURNAL_KEY, EVENTS_KEY, PROJECTS_KEY, LOCAL_SYNC_UPDATED_AT_KEY } from '@/lib/storage-keys'
+import type { SyncBundle } from '@/lib/github/types'
 
 interface StoreContextType {
   tasks: Task[]
@@ -27,6 +28,8 @@ interface StoreContextType {
   addEvent: (text: string, date: string, hour: number, sourceTaskId?: string, endHour?: number, location?: string, minutes?: number, endMinutes?: number, allDay?: boolean, recurrence?: RecurrencePattern | null) => string
   updateEvent: (id: string, updates: Partial<Event>) => void
   deleteEvent: (id: string, singleInstanceDate?: string) => void
+  applySyncBundle: (bundle: SyncBundle) => void
+  getSyncSnapshot: () => Pick<SyncBundle, 'tasks' | 'events' | 'journal' | 'projects'>
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined)
@@ -80,6 +83,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const journalRef = useRef(journal)
   const eventsRef = useRef(events)
   const projectsRef = useRef(projects)
+  const skipSyncTouchRef = useRef(false)
 
   tasksRef.current = tasks
   journalRef.current = journal
@@ -106,6 +110,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setEvents(getStoredEvents())
     setProjects(getStoredProjects())
   }, [])
+
+  const touchLocalSync = useCallback(() => {
+    if (skipSyncTouchRef.current || typeof window === 'undefined') return
+    localStorage.setItem(LOCAL_SYNC_UPDATED_AT_KEY, new Date().toISOString())
+  }, [])
+
+  const applySyncBundle = useCallback((bundle: SyncBundle) => {
+    skipSyncTouchRef.current = true
+    setTasks(bundle.tasks)
+    setEvents(bundle.events)
+    setJournal(bundle.journal)
+    setProjects(bundle.projects)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(TASKS_KEY, JSON.stringify(bundle.tasks))
+      localStorage.setItem(EVENTS_KEY, JSON.stringify(bundle.events))
+      localStorage.setItem(JOURNAL_KEY, JSON.stringify(bundle.journal))
+      localStorage.setItem(PROJECTS_KEY, JSON.stringify(bundle.projects))
+      localStorage.setItem(LOCAL_SYNC_UPDATED_AT_KEY, bundle.updatedAt)
+    }
+    skipSyncTouchRef.current = false
+  }, [])
+
+  const getSyncSnapshot = useCallback(() => ({
+    tasks: tasksRef.current,
+    events: eventsRef.current,
+    journal: journalRef.current,
+    projects: projectsRef.current,
+  }), [])
 
   // Local backup helpers (browser console)
   useEffect(() => {
@@ -209,33 +241,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.setItem(TASKS_KEY, JSON.stringify(newTasks))
     }
-    
+    touchLocalSync()
     return newTasks
-  }, [])
+  }, [touchLocalSync])
 
-  // Save journal to localStorage (Supabase sync handled by individual operations)
   const saveJournal = useCallback((newJournal: Record<string, JournalEntry>) => {
     setJournal(newJournal)
     if (typeof window !== 'undefined') {
       localStorage.setItem(JOURNAL_KEY, JSON.stringify(newJournal))
     }
-  }, [])
+    touchLocalSync()
+  }, [touchLocalSync])
 
-  // Save events to localStorage (Supabase sync handled by individual operations)
   const saveEvents = useCallback((newEvents: Event[]) => {
     setEvents(newEvents)
     if (typeof window !== 'undefined') {
       localStorage.setItem(EVENTS_KEY, JSON.stringify(newEvents))
     }
-  }, [])
+    touchLocalSync()
+  }, [touchLocalSync])
 
-  // Save projects to localStorage (Supabase sync handled by individual operations)
   const saveProjects = useCallback((newProjects: Project[]) => {
     setProjects(newProjects)
     if (typeof window !== 'undefined') {
       localStorage.setItem(PROJECTS_KEY, JSON.stringify(newProjects))
     }
-  }, [])
+    touchLocalSync()
+  }, [touchLocalSync])
 
   // Task operations
   const addTask = useCallback((text: string, subtasks?: Subtask[], dueDate?: string, recurrence?: any): string => {
@@ -485,6 +517,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addEvent,
     updateEvent,
     deleteEvent,
+    applySyncBundle,
+    getSyncSnapshot,
   }
 
   return React.createElement(StoreContext.Provider, { value }, children)
