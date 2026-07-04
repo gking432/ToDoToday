@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-04T15:02:07.695Z",
+  "updatedAt": "2026-07-04T15:02:13.423Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -401,13 +401,13 @@
     {
       "id": "c86f0a13-63de-4542-90fb-e0adb020c963",
       "text": "Sync test",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-04T14:55:12.357Z",
       "dueDate": "2026-07-04",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-04T14:39:05.760Z",
-      "updatedAt": "2026-07-04T14:39:07.600Z",
+      "updatedAt": "2026-07-04T14:55:12.357Z",
       "order": 25,
       "recurrence": null,
       "parentTaskId": null
