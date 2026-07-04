@@ -9,12 +9,12 @@ import { ProjectNotesView } from './ProjectNotesView'
 import { UpcomingEvents } from './UpcomingEvents'
 import { Navigation } from './Navigation'
 import { format } from 'date-fns'
-import { X, LogOut } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import type { ViewMode } from '@/types'
-import { useAuth } from './AuthProvider'
+import { SettingsPanel } from './SettingsPanel'
 
 export function ToDoTodayApp() {
-  const { signOut } = useAuth()
+  const [showSettings, setShowSettings] = useState(false)
   const [activeView, setActiveView] = useState<ViewMode>('daily')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [dailyExpanded, setDailyExpanded] = useState(false)
@@ -82,6 +82,38 @@ export function ToDoTodayApp() {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setShowSettings(true)}
+        aria-label="Settings"
+        title="Settings"
+        style={{
+          position: 'fixed',
+          top: '16px',
+          right: '16px',
+          zIndex: 100,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: '#5A7A5E',
+          padding: '6px',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = '#006747'
+          e.currentTarget.style.backgroundColor = 'rgba(0, 103, 71, 0.08)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = '#5A7A5E'
+          e.currentTarget.style.backgroundColor = 'transparent'
+        }}
+      >
+        <Settings size={18} strokeWidth={1.8} />
+      </button>
+
       <div className="flex gap-4 p-4 flex-1" style={{ minWidth: 0, position: 'relative' }}>
         {/* LEFT SIDE — Time display and To-Do List */}
         <div 
@@ -227,6 +259,7 @@ export function ToDoTodayApp() {
                 activeView={activeView}
                 selectedDate={selectedDate}
                 navigate={navigate}
+                onOpenSettings={() => setShowSettings(true)}
               />
               {activeView === 'hourly' && (
                 <HourlyView date={selectedDate} navigate={navigate} />
@@ -337,41 +370,6 @@ export function ToDoTodayApp() {
             </div>
           )}
 
-          {/* Logout button - top right */}
-          {showFullViewText && (
-            <button
-              onClick={signOut}
-              title="Sign out"
-              style={{
-                position: 'absolute',
-                top: '24px',
-                right: '24px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'rgba(255,255,255,0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '6px',
-                borderRadius: '6px',
-                animation: 'fadeIn 0.3s ease-in',
-                zIndex: 1,
-                transition: 'color 0.2s ease, background-color 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#FFFFFF'
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'rgba(255,255,255,0.6)'
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }}
-            >
-              <LogOut size={16} strokeWidth={1.8} />
-            </button>
-          )}
-
           {/* Large Time Display */}
           <div
             style={{
@@ -450,6 +448,7 @@ export function ToDoTodayApp() {
           />
         </div>
       )}
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   )
 }

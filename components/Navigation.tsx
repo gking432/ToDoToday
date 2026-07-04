@@ -1,17 +1,16 @@
 'use client'
 
-import { Home, Calendar, BookOpen, LogOut } from 'lucide-react'
+import { Home, Calendar, BookOpen, Settings } from 'lucide-react'
 import type { ViewMode } from '@/types'
-import { useAuth } from './AuthProvider'
 
 interface NavigationProps {
   activeView: ViewMode
   selectedDate: Date
   navigate: (view: ViewMode, date?: Date) => void
+  onOpenSettings?: () => void
 }
 
-export function Navigation({ activeView, selectedDate, navigate }: NavigationProps) {
-  const { signOut } = useAuth()
+export function Navigation({ activeView, selectedDate, navigate, onOpenSettings }: NavigationProps) {
   const isToday =
     activeView === 'daily' &&
     selectedDate.toDateString() === new Date().toDateString()
@@ -77,28 +76,31 @@ export function Navigation({ activeView, selectedDate, navigate }: NavigationPro
         })}
       </div>
       
-      <button
-        onClick={signOut}
-        className="relative flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200"
-        style={{
-          backgroundColor: 'transparent',
-          color: 'rgba(255,255,255,0.6)',
-          fontFamily: "'DM Sans', sans-serif",
-          fontSize: '13px',
-          fontWeight: 400,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'
-          e.currentTarget.style.color = '#FFFFFF'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent'
-          e.currentTarget.style.color = 'rgba(255,255,255,0.6)'
-        }}
-        title="Sign out"
-      >
-        <LogOut size={14} strokeWidth={1.8} />
-      </button>
+      {onOpenSettings && (
+        <button
+          onClick={onOpenSettings}
+          className="relative flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200"
+          style={{
+            backgroundColor: 'transparent',
+            color: 'rgba(255,255,255,0.6)',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: '13px',
+            fontWeight: 400,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'
+            e.currentTarget.style.color = '#FFFFFF'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = 'rgba(255,255,255,0.6)'
+          }}
+          title="Settings"
+          aria-label="Settings"
+        >
+          <Settings size={14} strokeWidth={1.8} />
+        </button>
+      )}
     </div>
   )
 }
