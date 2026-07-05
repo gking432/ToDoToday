@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-05T18:06:27.646Z",
+  "updatedAt": "2026-07-05T18:06:34.295Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -166,13 +166,13 @@
     {
       "id": "83f00566-9dff-438e-af48-1ec067d468f3",
       "text": "Clean truck",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-05T18:06:31.589Z",
       "dueDate": "2026-06-21",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-06-21T14:57:34.105Z",
-      "updatedAt": "2026-06-21T14:57:35.598Z",
+      "updatedAt": "2026-07-05T18:06:31.589Z",
       "order": 11,
       "recurrence": null,
       "parentTaskId": null
