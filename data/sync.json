@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-05T18:06:08.427Z",
+  "updatedAt": "2026-07-05T18:06:22.417Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -423,6 +423,20 @@
       "createdAt": "2026-07-04T15:02:57.537Z",
       "updatedAt": "2026-07-04T15:02:59.390Z",
       "order": 26,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "edb7a1e4-e642-4d12-ae44-a18457099221",
+      "text": "Cancel cursor",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": null,
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-05T18:06:19.547Z",
+      "updatedAt": "2026-07-05T18:06:19.547Z",
+      "order": 27,
       "recurrence": null,
       "parentTaskId": null
     }
