@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-05T18:06:22.417Z",
+  "updatedAt": "2026-07-05T18:06:27.646Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -431,11 +431,11 @@
       "text": "Cancel cursor",
       "completed": false,
       "completedAt": null,
-      "dueDate": null,
+      "dueDate": "2026-07-26",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-05T18:06:19.547Z",
-      "updatedAt": "2026-07-05T18:06:19.547Z",
+      "updatedAt": "2026-07-05T18:06:24.911Z",
       "order": 27,
       "recurrence": null,
       "parentTaskId": null
