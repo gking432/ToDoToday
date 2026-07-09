@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-09T12:25:51.401Z",
+  "updatedAt": "2026-07-09T12:26:03.669Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -463,6 +463,20 @@
           "completed": false
         }
       ],
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "281394fa-dd3a-48ce-863f-3c09e74fe87e",
+      "text": "Pay down payment",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": "2026-07-09",
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-09T12:25:59.318Z",
+      "updatedAt": "2026-07-09T12:26:00.861Z",
+      "order": 29,
       "recurrence": null,
       "parentTaskId": null
     }
