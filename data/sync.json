@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-09T12:25:23.651Z",
+  "updatedAt": "2026-07-09T12:25:37.902Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -437,6 +437,27 @@
       "createdAt": "2026-07-05T18:06:19.547Z",
       "updatedAt": "2026-07-05T18:06:24.911Z",
       "order": 27,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "ba672325-c3ef-43ad-a4a2-11833e597200",
+      "text": "Set up",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": "2026-07-09",
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-09T12:25:32.559Z",
+      "updatedAt": "2026-07-09T12:25:34.900Z",
+      "order": 28,
+      "subtasks": [
+        {
+          "id": "c74f0be4-642e-428b-9e72-3cfb07bfc870",
+          "text": "Internet",
+          "completed": false
+        }
+      ],
       "recurrence": null,
       "parentTaskId": null
     }
