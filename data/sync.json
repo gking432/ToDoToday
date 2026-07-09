@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-09T16:29:18.962Z",
+  "updatedAt": "2026-07-09T16:29:34.881Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -477,6 +477,20 @@
       "createdAt": "2026-07-09T12:25:59.318Z",
       "updatedAt": "2026-07-09T12:26:00.861Z",
       "order": 29,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "7acd5f5e-7e34-4f14-bcc9-b24d7f8b0dd6",
+      "text": "Bring deodorant",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": null,
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-09T16:29:31.675Z",
+      "updatedAt": "2026-07-09T16:29:31.675Z",
+      "order": 30,
       "recurrence": null,
       "parentTaskId": null
     }
