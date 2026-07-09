@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-09T16:29:09.713Z",
+  "updatedAt": "2026-07-09T16:29:18.962Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -281,13 +281,13 @@
     {
       "id": "40e62911-07cf-41c7-89e9-6876af5e9f6c",
       "text": "Make slide show for bds and make clips and make your whole pitch for bob HQ",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-09T16:29:16.026Z",
       "dueDate": "2026-06-26",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-06-25T14:15:48.456Z",
-      "updatedAt": "2026-06-25T14:15:52.745Z",
+      "updatedAt": "2026-07-09T16:29:16.026Z",
       "order": 18,
       "recurrence": null,
       "parentTaskId": null
@@ -387,13 +387,13 @@
     {
       "id": "852355d6-cbca-4b4d-a948-40ffc945f731",
       "text": "Apply for other apartments? Brix? Evoni? JC?",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-09T16:29:14.141Z",
       "dueDate": "2026-07-03",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-03T14:27:09.333Z",
-      "updatedAt": "2026-07-03T14:27:11.817Z",
+      "updatedAt": "2026-07-09T16:29:14.141Z",
       "order": 24,
       "recurrence": null,
       "parentTaskId": null
