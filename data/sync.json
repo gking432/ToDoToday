@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-10T16:09:10.152Z",
+  "updatedAt": "2026-07-10T16:09:26.750Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -443,13 +443,13 @@
     {
       "id": "ba672325-c3ef-43ad-a4a2-11833e597200",
       "text": "Set up",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-10T16:09:17.776Z",
       "dueDate": "2026-07-09",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-09T12:25:32.559Z",
-      "updatedAt": "2026-07-09T12:25:48.645Z",
+      "updatedAt": "2026-07-10T16:09:17.776Z",
       "order": 28,
       "subtasks": [
         {
