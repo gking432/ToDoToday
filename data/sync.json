@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-10T16:12:20.249Z",
+  "updatedAt": "2026-07-10T16:12:33.491Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -505,6 +505,20 @@
       "createdAt": "2026-07-09T19:13:18.599Z",
       "updatedAt": "2026-07-09T19:13:20.344Z",
       "order": 31,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "6772964d-d19e-4ced-8000-a8b586cce999",
+      "text": "Set up codex remote",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": "2026-07-10",
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-10T16:12:28.588Z",
+      "updatedAt": "2026-07-10T16:12:30.661Z",
+      "order": 32,
       "recurrence": null,
       "parentTaskId": null
     }
