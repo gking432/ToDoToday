@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-11T23:14:54.548Z",
+  "updatedAt": "2026-07-11T23:15:06.603Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -469,13 +469,13 @@
     {
       "id": "281394fa-dd3a-48ce-863f-3c09e74fe87e",
       "text": "Pay down payment",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-11T23:14:58.304Z",
       "dueDate": "2026-07-09",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-09T12:25:59.318Z",
-      "updatedAt": "2026-07-09T12:26:00.861Z",
+      "updatedAt": "2026-07-11T23:14:58.304Z",
       "order": 29,
       "recurrence": null,
       "parentTaskId": null
@@ -497,13 +497,13 @@
     {
       "id": "6f46c428-6c17-4baf-99a0-b4cb806726d0",
       "text": "Chat got connections",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-11T23:15:00.069Z",
       "dueDate": "2026-07-09",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-09T19:13:18.599Z",
-      "updatedAt": "2026-07-09T19:13:20.344Z",
+      "updatedAt": "2026-07-11T23:15:00.069Z",
       "order": 31,
       "recurrence": null,
       "parentTaskId": null
@@ -511,13 +511,13 @@
     {
       "id": "6772964d-d19e-4ced-8000-a8b586cce999",
       "text": "Set up codex remote",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-11T23:15:02.102Z",
       "dueDate": "2026-07-10",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-10T16:12:28.588Z",
-      "updatedAt": "2026-07-10T16:12:30.661Z",
+      "updatedAt": "2026-07-11T23:15:02.102Z",
       "order": 32,
       "recurrence": null,
       "parentTaskId": null
