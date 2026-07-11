@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-11T23:15:06.603Z",
+  "updatedAt": "2026-07-11T23:15:12.378Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -415,13 +415,13 @@
     {
       "id": "553b7ccf-e2a8-4550-aad7-98efada82293",
       "text": "Figure out bot issues. Why not sell at 90? obviously would have worked out, still sketchy though. I don't want to ever be at risk of losing like that in late games and overtime.",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-11T23:15:09.620Z",
       "dueDate": null,
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-04T15:02:57.537Z",
-      "updatedAt": "2026-07-04T15:02:59.390Z",
+      "updatedAt": "2026-07-11T23:15:09.620Z",
       "order": 26,
       "recurrence": null,
       "parentTaskId": null
