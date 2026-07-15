@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-15T15:27:12.664Z",
+  "updatedAt": "2026-07-15T15:27:18.187Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -519,6 +519,20 @@
       "createdAt": "2026-07-10T16:12:28.588Z",
       "updatedAt": "2026-07-11T23:15:02.102Z",
       "order": 32,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "9547409a-1ac6-49ad-aa92-badb5cae9340",
+      "text": "Collizi",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": "2026-07-15",
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-15T15:27:13.783Z",
+      "updatedAt": "2026-07-15T15:27:15.322Z",
+      "order": 33,
       "recurrence": null,
       "parentTaskId": null
     }
