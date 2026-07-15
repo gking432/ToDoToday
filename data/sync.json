@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-15T15:45:51.993Z",
+  "updatedAt": "2026-07-15T15:46:06.023Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -533,6 +533,20 @@
       "createdAt": "2026-07-15T15:27:13.783Z",
       "updatedAt": "2026-07-15T15:27:15.322Z",
       "order": 33,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "eb035f86-2449-4abd-ba25-4d9e60c5bb8a",
+      "text": "Reschedule Klarity",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": null,
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-15T15:46:03.306Z",
+      "updatedAt": "2026-07-15T15:46:03.306Z",
+      "order": 34,
       "recurrence": null,
       "parentTaskId": null
     }
