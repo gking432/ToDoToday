@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-20T13:07:55.187Z",
+  "updatedAt": "2026-07-20T13:08:07.104Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -547,6 +547,20 @@
       "createdAt": "2026-07-15T15:46:03.306Z",
       "updatedAt": "2026-07-15T15:46:07.092Z",
       "order": 34,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "cbf5b378-eefb-4c21-a9b1-d87adc6464e0",
+      "text": "New email sig",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": null,
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-20T13:08:04.403Z",
+      "updatedAt": "2026-07-20T13:08:04.403Z",
+      "order": 35,
       "recurrence": null,
       "parentTaskId": null
     }
