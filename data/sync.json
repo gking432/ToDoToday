@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-26T20:39:23.823Z",
+  "updatedAt": "2026-07-26T20:39:32.308Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -567,13 +567,13 @@
     {
       "id": "f4679060-1b03-4c0c-be8a-18dfff58f48f",
       "text": "Boxes",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-26T20:39:29.548Z",
       "dueDate": "2026-07-26",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-26T16:02:48.510Z",
-      "updatedAt": "2026-07-26T16:02:50.564Z",
+      "updatedAt": "2026-07-26T20:39:29.548Z",
       "order": 36,
       "recurrence": null,
       "parentTaskId": null
