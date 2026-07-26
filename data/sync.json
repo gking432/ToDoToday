@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-26T16:02:27.252Z",
+  "updatedAt": "2026-07-26T16:02:37.139Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -253,13 +253,13 @@
     {
       "id": "e717143b-1ddc-422c-adf9-2ecf81696ee1",
       "text": "Finish pitch for el campo",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-26T16:02:32.065Z",
       "dueDate": "2026-06-24",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-06-24T13:17:59.118Z",
-      "updatedAt": "2026-06-24T13:18:00.791Z",
+      "updatedAt": "2026-07-26T16:02:32.065Z",
       "order": 16,
       "recurrence": null,
       "parentTaskId": null
@@ -429,13 +429,13 @@
     {
       "id": "edb7a1e4-e642-4d12-ae44-a18457099221",
       "text": "Cancel cursor",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-26T16:02:34.444Z",
       "dueDate": "2026-07-26",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-05T18:06:19.547Z",
-      "updatedAt": "2026-07-05T18:06:24.911Z",
+      "updatedAt": "2026-07-26T16:02:34.444Z",
       "order": 27,
       "recurrence": null,
       "parentTaskId": null
