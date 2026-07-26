@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-26T16:03:11.933Z",
+  "updatedAt": "2026-07-26T16:03:16.626Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -617,6 +617,20 @@
       "createdAt": "2026-07-26T16:03:07.662Z",
       "updatedAt": "2026-07-26T16:03:09.247Z",
       "order": 39,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "7eb48df5-3c7b-47c9-8b5e-2b9205b2c1c4",
+      "text": "Garbage",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": "2026-07-26",
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-26T16:03:12.596Z",
+      "updatedAt": "2026-07-26T16:03:13.872Z",
+      "order": 40,
       "recurrence": null,
       "parentTaskId": null
     }
