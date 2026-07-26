@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-26T18:48:24.346Z",
+  "updatedAt": "2026-07-26T18:48:35.025Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -581,13 +581,13 @@
     {
       "id": "99d1b063-d82b-4f09-ad9d-3dfd4a324d69",
       "text": "Store",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-07-26T18:48:32.339Z",
       "dueDate": "2026-07-26",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-26T16:02:52.957Z",
-      "updatedAt": "2026-07-26T16:02:54.745Z",
+      "updatedAt": "2026-07-26T18:48:32.339Z",
       "order": 37,
       "recurrence": null,
       "parentTaskId": null
