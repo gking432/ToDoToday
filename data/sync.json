@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-26T16:02:57.431Z",
+  "updatedAt": "2026-07-26T16:03:05.054Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -589,6 +589,20 @@
       "createdAt": "2026-07-26T16:02:52.957Z",
       "updatedAt": "2026-07-26T16:02:54.745Z",
       "order": 37,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "ff791c1c-7f13-461e-a461-2f2a974731c1",
+      "text": "Room",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": "2026-07-26",
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-26T16:03:00.730Z",
+      "updatedAt": "2026-07-26T16:03:02.335Z",
+      "order": 38,
       "recurrence": null,
       "parentTaskId": null
     }
