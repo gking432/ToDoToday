@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-29T17:10:00.114Z",
+  "updatedAt": "2026-07-29T17:10:02.962Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -653,11 +653,11 @@
       "text": "Garbage",
       "completed": false,
       "completedAt": null,
-      "dueDate": null,
+      "dueDate": "2026-07-29",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-29T17:09:57.338Z",
-      "updatedAt": "2026-07-29T17:09:57.338Z",
+      "updatedAt": "2026-07-29T17:10:00.124Z",
       "order": 42,
       "recurrence": null,
       "parentTaskId": null
