@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-30T16:35:55.934Z",
+  "updatedAt": "2026-07-30T16:36:32.185Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -659,6 +659,20 @@
       "createdAt": "2026-07-29T17:09:57.338Z",
       "updatedAt": "2026-07-29T17:10:00.124Z",
       "order": 42,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "732d5653-8858-4ec8-8824-021be3a11afb",
+      "text": "Bills",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": "2026-08-01",
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-07-30T16:36:27.045Z",
+      "updatedAt": "2026-07-30T16:36:29.283Z",
+      "order": 43,
       "recurrence": null,
       "parentTaskId": null
     }
