@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-01T15:50:02.039Z",
+  "updatedAt": "2026-08-01T15:50:20.185Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -673,6 +673,20 @@
       "createdAt": "2026-07-30T16:36:27.045Z",
       "updatedAt": "2026-07-30T16:36:29.283Z",
       "order": 43,
+      "recurrence": null,
+      "parentTaskId": null
+    },
+    {
+      "id": "6d0ac8e9-e28d-43af-af1b-b3ca5be10229",
+      "text": "Clean broom",
+      "completed": false,
+      "completedAt": null,
+      "dueDate": "2026-08-01",
+      "priority": null,
+      "scheduledSlots": [],
+      "createdAt": "2026-08-01T15:50:15.363Z",
+      "updatedAt": "2026-08-01T15:50:17.484Z",
+      "order": 44,
       "recurrence": null,
       "parentTaskId": null
     }
