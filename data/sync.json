@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-01T15:50:20.185Z",
+  "updatedAt": "2026-08-01T15:50:29.424Z",
   "tasks": [
     {
       "id": "d174e790-c358-4a46-8728-b4aec4c699b7",
@@ -609,13 +609,13 @@
     {
       "id": "5b00e774-0880-4fcc-9db0-4e037c500dd8",
       "text": "Laundry",
-      "completed": false,
-      "completedAt": null,
+      "completed": true,
+      "completedAt": "2026-08-01T15:50:26.743Z",
       "dueDate": "2026-07-26",
       "priority": null,
       "scheduledSlots": [],
       "createdAt": "2026-07-26T16:03:07.662Z",
-      "updatedAt": "2026-07-26T16:03:09.247Z",
+      "updatedAt": "2026-08-01T15:50:26.743Z",
       "order": 39,
       "recurrence": null,
       "parentTaskId": null
